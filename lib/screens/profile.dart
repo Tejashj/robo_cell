@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'login.dart'; // 🔥 make sure path is correct
 
 class ProfilePage extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -12,9 +13,6 @@ class ProfilePage extends StatelessWidget {
     final String role = user['role'] ?? '';
     final String photoUrl = user['photo_url'] ?? '';
 
-    // 🔥 DEBUG (remove later)
-    print("PHOTO URL: $photoUrl");
-
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -22,20 +20,28 @@ class ProfilePage extends StatelessWidget {
         backgroundColor: Colors.black,
         foregroundColor: const Color(0xFFD8CFB4),
         actions: [
+          // 🔥 LOGOUT BUTTON (UPDATED)
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoginScreen(),
+                ),
+                    (route) => false,
+              );
             },
           ),
         ],
       ),
+
       body: SingleChildScrollView(
         child: Column(
           children: [
             const SizedBox(height: 20),
 
-            // 🔥 Profile Photo (UPDATED)
+            // 🔥 Profile Photo
             CircleAvatar(
               radius: 60,
               backgroundColor: const Color(0xFF16A085),
@@ -89,7 +95,7 @@ class ProfilePage extends StatelessWidget {
                   minimumSize: const Size(double.infinity, 50),
                 ),
                 onPressed: () {
-                  // TODO: Implement later
+                  // 🔥 Next step feature
                 },
                 child: const Text(
                   "CHANGE PASSWORD",
