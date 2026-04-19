@@ -7,7 +7,9 @@ import 'screens/profile.dart';
 import 'screens/committees.dart';
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+  final Map<String, dynamic> user;
+
+  const MainNavigation({super.key, required this.user});
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -16,32 +18,40 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const HomeContent(), // Dashboard + Announcements
-    const ChatPage(),
-    const ActivityPage(),
-    const MeetingsHistoryPage(),
-    const CommitteesPage(),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final List<Widget> _pages = [
+      const HomeContent(), // Dashboard + Announcements
+      const ChatPage(),
+      const ActivityPage(),
+      const MeetingsHistoryPage(),
+      const CommitteesPage(),
+      const ProfilePage(user: {}), // Pass user data here
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // Leading Logo
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Image.asset('assets/rcell.jpg'),
         ),
         title: const Text("ROBOCELL"),
         actions: [
-          // PROPER TOP-RIGHT PROFILE ACCESS
           Padding(
             padding: const EdgeInsets.only(right: 15.0),
             child: GestureDetector(
               onTap: () => Navigator.push(
-                context, 
-                MaterialPageRoute(builder: (context) => const ProfilePage())
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfilePage(user: widget.user),
+                ),
               ),
               child: Container(
                 padding: const EdgeInsets.all(2),
@@ -52,7 +62,11 @@ class _MainNavigationState extends State<MainNavigation> {
                 child: const CircleAvatar(
                   radius: 14,
                   backgroundColor: Colors.black,
-                  child: Icon(Icons.person_outline, size: 18, color: Color(0xFF16A085)),
+                  child: Icon(
+                    Icons.person_outline,
+                    size: 18,
+                    color: Color(0xFF16A085),
+                  ),
                 ),
               ),
             ),
@@ -60,11 +74,7 @@ class _MainNavigationState extends State<MainNavigation> {
         ],
       ),
 
-      // IndexedStack preserves scroll state on all pages
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _pages),
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -74,15 +84,28 @@ class _MainNavigationState extends State<MainNavigation> {
         backgroundColor: Colors.black,
         type: BottomNavigationBarType.fixed,
         showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: "Feed"),
-          BottomNavigationBarItem(icon: Icon(Icons.forum_rounded), label: "Chat"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_rounded),
+            label: "Feed",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.forum_rounded),
+            label: "Chat",
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.bolt_rounded), label: "Ops"),
-          BottomNavigationBarItem(icon: Icon(Icons.meeting_room_rounded), label: "Meetings"),
-          BottomNavigationBarItem(icon: Icon(Icons.info_rounded), label: "Info"),
-          
-          
+          BottomNavigationBarItem(
+            icon: Icon(Icons.meeting_room_rounded),
+            label: "Meetings",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_rounded),
+            label: "Profile",
+          ),
         ],
       ),
     );
