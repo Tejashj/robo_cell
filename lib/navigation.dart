@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:robo_cell/screens/about.dart';
 import 'screens/home.dart';
 import 'screens/chat.dart';
 import 'screens/activity.dart';
-import 'screens/meeting.dart';
 import 'screens/profile.dart';
-import 'screens/committees.dart';
+import 'screens/meetings.dart';
 
 class MainNavigation extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -24,13 +24,12 @@ class _MainNavigationState extends State<MainNavigation> {
   void initState() {
     super.initState();
 
-    final List<Widget> _pages = [
-      const HomeContent(), // Dashboard + Announcements
+    _pages = [
+      const HomeContent(),
       const ChatPage(),
       const ActivityPage(),
       const MeetingsHistoryPage(),
-      const CommitteesPage(),
-      const ProfilePage(user: {}), // Pass user data here
+      const AboutRoboCellPage(),
     ];
   }
 
@@ -74,7 +73,10 @@ class _MainNavigationState extends State<MainNavigation> {
         ],
       ),
 
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -90,22 +92,16 @@ class _MainNavigationState extends State<MainNavigation> {
         ),
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_rounded),
-            label: "Feed",
-          ),
+              icon: Icon(Icons.dashboard_rounded), label: "Feed"),
           BottomNavigationBarItem(
-            icon: Icon(Icons.forum_rounded),
-            label: "Chat",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.bolt_rounded), label: "Ops"),
+              icon: Icon(Icons.forum_rounded), label: "Chat"),
           BottomNavigationBarItem(
-            icon: Icon(Icons.meeting_room_rounded),
-            label: "Meetings",
-          ),
+              icon: Icon(Icons.bolt_rounded), label: "Ops"),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_rounded),
-            label: "Profile",
-          ),
+              icon: Icon(Icons.meeting_room_rounded), label: "Meetings"),
+              BottomNavigationBarItem(
+              icon: Icon(Icons.info_outline), label: "About"),
+
         ],
       ),
     );
