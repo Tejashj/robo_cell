@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+  final Map<String, dynamic> user;
+
+  const ProfilePage({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
+    final String name = user['name'] ?? '';
+    final String usn = user['usn'] ?? '';
+    final String role = user['role'] ?? '';
+    final String photoUrl = user['photo_url'] ?? '';
+
+    // 🔥 DEBUG (remove later)
+    print("PHOTO URL: $photoUrl");
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -12,62 +22,64 @@ class ProfilePage extends StatelessWidget {
         backgroundColor: Colors.black,
         foregroundColor: const Color(0xFFD8CFB4),
         actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
         ],
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // --- Profile Photo & Header ---
-            Center(
-              child: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: const Color(0xFF16A085),
-                    child: CircleAvatar(
-                      radius: 57,
-                      backgroundImage: AssetImage('assets/rcell.jpg'), // Placeholder
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: CircleAvatar(
-                      backgroundColor: const Color(0xFF16A085),
-                      radius: 18,
-                      child: Icon(Icons.edit, size: 18, color: Colors.black),
-                    ),
-                  ),
-                ],
+
+            // 🔥 Profile Photo (UPDATED)
+            CircleAvatar(
+              radius: 60,
+              backgroundColor: const Color(0xFF16A085),
+              child: CircleAvatar(
+                radius: 57,
+                backgroundColor: Colors.black,
+                backgroundImage:
+                photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                child: photoUrl.isEmpty
+                    ? const Icon(
+                  Icons.person,
+                  size: 50,
+                  color: Color(0xFF16A085),
+                )
+                    : null,
               ),
             ),
+
             const SizedBox(height: 15),
-            const Text("Tejas H J", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFFD8CFB4))),
-            const Text("1BI23RI052 | PRESIDENT", style: TextStyle(color: Color(0xFF16A085), letterSpacing: 1.2)),
-            
-            const SizedBox(height: 30),
-            
-            
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildStatColumn("75%", "Attendance"),
-                _buildStatColumn("12", "Meetings"),
-                _buildStatColumn("3", "Projects"),
-              ],
+
+            // 🔥 Name
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFD8CFB4),
+              ),
+            ),
+
+            // 🔥 USN + ROLE
+            Text(
+              "$usn | ${role.toUpperCase()}",
+              style: const TextStyle(
+                color: Color(0xFF16A085),
+                letterSpacing: 1.2,
+              ),
             ),
 
             const SizedBox(height: 30),
             const Divider(color: Colors.white10, indent: 30, endIndent: 30),
-
-            // --- Details List ---
-            _buildProfileTile(Icons.email_outlined, "Email", "tejas@bit.edu"),
-            _buildProfileTile(Icons.link, "LinkedIn", "linkedin.com/in/tejas"),
-            _buildProfileTile(Icons.history, "Committee History", "View Legacy"),
-            
             const SizedBox(height: 30),
+
+            // 🔐 Change Password Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: ElevatedButton(
@@ -76,31 +88,18 @@ class ProfilePage extends StatelessWidget {
                   side: const BorderSide(color: Color(0xFFD8CFB4)),
                   minimumSize: const Size(double.infinity, 50),
                 ),
-                onPressed: () {},
-                child: const Text("CHANGE PASSWORD", style: TextStyle(color: Color(0xFFD8CFB4))),
+                onPressed: () {
+                  // TODO: Implement later
+                },
+                child: const Text(
+                  "CHANGE PASSWORD",
+                  style: TextStyle(color: Color(0xFFD8CFB4)),
+                ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStatColumn(String val, String label) {
-    return Column(
-      children: [
-        Text(val, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-      ],
-    );
-  }
-
-  Widget _buildProfileTile(IconData icon, String title, String value) {
-    return ListTile(
-      leading: Icon(icon, color: const Color(0xFF16A085)),
-      title: Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-      subtitle: Text(value, style: const TextStyle(color: Colors.white, fontSize: 16)),
-      trailing: const Icon(Icons.chevron_right, color: Colors.white24),
     );
   }
 }
