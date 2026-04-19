@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "738346738918",
+    "project_id": "roboecll",
+    "storage_bucket": "roboecll.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:738346738918:android:e0e5833813676c41084727",
+        "android_client_info": {
+          "package_name": "com.example.robo_cell"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRjnd5mec5p239osx4i4oAZ-drhXlwWvI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
