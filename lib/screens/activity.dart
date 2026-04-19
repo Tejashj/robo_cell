@@ -24,19 +24,19 @@ class ActivityPage extends StatelessWidget {
 
             const SizedBox(height: 35),
 
-            // --- SECTION 2: SCHEDULED MEETINGS ---
-            const Text("UPCOMING MEETINGS", style: TextStyle(color: Color(0xFF16A085), fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-            const SizedBox(height: 15),
-            _buildMeetingTile("General Body Meet", "Tomorrow, 4:00 PM", "Room 402"),
-            _buildMeetingTile("Core Committee Sync", "April 22, 5:30 PM", "Online/Discord"),
-
-            const SizedBox(height: 35),
-
-            // --- SECTION 3: EVENT CALENDAR ---
+            // --- SECTION 2: EVENT CALENDAR ---
             const Text("EVENT CALENDAR", style: TextStyle(color: Color(0xFF16A085), fontWeight: FontWeight.bold, letterSpacing: 1.5)),
             const SizedBox(height: 15),
             _buildEventTile("Robothon '26", "May 20-21", "Main Lab"),
             _buildEventTile("IoT Workshop", "May 28", "Seminar Hall"),
+
+
+              const SizedBox(height: 35),
+
+            // --- SECTION 3:  tAKE COMPONENETS
+            const Text("RESERVE COMPONENTS", style: TextStyle(color: Color(0xFF16A085), fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+            const SizedBox(height: 15),
+            _buildComponentList("Robothon '26", "ESP32", "ARDUINO UNO","RASPBERRY PI","DC MOTOR"),
           ],
         ),
       ),
@@ -73,14 +73,14 @@ class ActivityPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMeetingTile(String title, String time, String location) {
+  Widget _buildComponentList(String title, String time, String component1, String component2, String component3) {
     return Card(
       color: Colors.white.withOpacity(0.05),
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: const Icon(Icons.groups, color: Color(0xFFD8CFB4)),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text("$time • $location"),
+        subtitle: Text("$time • $component1, $component2, $component3"),
         trailing: const Icon(Icons.notifications_none, size: 20),
       ),
     );

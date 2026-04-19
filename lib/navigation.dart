@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'screens/home.dart';
 import 'screens/chat.dart';
 import 'screens/activity.dart';
+import 'screens/meeting.dart';
 import 'screens/profile.dart';
+import 'screens/committees.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -18,6 +20,8 @@ class _MainNavigationState extends State<MainNavigation> {
     const HomeContent(), // Dashboard + Announcements
     const ChatPage(),
     const ActivityPage(),
+    const MeetingsHistoryPage(),
+    const CommitteesPage(),
   ];
 
   @override
@@ -76,6 +80,8 @@ class _MainNavigationState extends State<MainNavigation> {
           BottomNavigationBarItem(icon: Icon(Icons.forum_rounded), label: "Chat"),
           BottomNavigationBarItem(icon: Icon(Icons.bolt_rounded), label: "Ops"),
           BottomNavigationBarItem(icon: Icon(Icons.meeting_room_rounded), label: "Meetings"),
+          BottomNavigationBarItem(icon: Icon(Icons.info_rounded), label: "Info"),
+          
           
         ],
       ),

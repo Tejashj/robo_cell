@@ -6,16 +6,21 @@ class CommitteesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("COMMITTEE HERITAGE")),
+      appBar: AppBar(
+        title: const Text("COMMITTEE HERITAGE"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         children: [
           _sectionHeader("CURRENT COMMITTEE (2026-27)"),
-          _memberTile("Tejas H J", "President", "1BI23RI052"),
-          _memberTile("Lasya N S", "Vice President", "1BI23RI028"),
-          const Divider(height: 40, color: Colors.white10),
+          _memberCard("Tejas H J", "President", "1BI23RI052", 'assets/tejas.jpg'),
+          _memberCard("Lasya N S", "Vice President", "1BI23RI028", 'assets/lasya.jpg'),
+          const SizedBox(height: 20),
+          const Divider(height: 40, color: Colors.white24),
           _sectionHeader("PREVIOUS COMMITTEE (2025-26)"),
-          _memberTile("Alumni Lead", "Ex-President", "1BI22RIxxx"),
+          _memberCard("Alumni Lead", "Ex-President", "1BI22RIxxx", 'assets/alumni.jpg'),
         ],
       ),
     );
@@ -23,59 +28,71 @@ class CommitteesPage extends StatelessWidget {
 
   Widget _sectionHeader(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Text(text, style: const TextStyle(color: Color(0xFF16A085), fontWeight: FontWeight.bold, fontSize: 12)),
+      padding: const EdgeInsets.only(left: 4, bottom: 16),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF16A085),
+          fontWeight: FontWeight.bold, 
+          letterSpacing: 1.2,
+          fontSize: 13
+        ),
+      ),
     );
   }
 
-  Widget _memberTile(String name, String role, String usn) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(name),
-      subtitle: Text("$role | $usn", style: const TextStyle(color: Colors.grey, fontSize: 12)),
-    );
-  }
-}
-
-// --- NEW ABOUT ROBOCELL PAGE ---
-class AboutRoboCellPage extends StatelessWidget {
-  const AboutRoboCellPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("ABOUT ROBOCELL")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(25),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _memberCard(String name, String role, String usn, String imagePath) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      color: const Color(0xFF1E1E1E), // Slightly lighter than background
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
           children: [
-            Center(child: Image.asset('assets/rcell.jpg', height: 120)),
-            const SizedBox(height: 30),
-            const Text("OUR MISSION", style: TextStyle(color: Color(0xFF16A085), fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            const Text(
-              "RoboCell is the premier robotics and automation department of the Bangalore Institute of Technology. We are dedicated to fostering innovation, technical excellence, and hands-on engineering skills among students.",
-              style: TextStyle(color: Colors.white70, height: 1.5),
+            // Profile Picture Circle
+            CircleAvatar(
+              radius: 35,
+              backgroundColor: const Color(0xFF16A085),
+              // Use BackgroundImage for local assets:
+              // backgroundImage: AssetImage(imagePath), 
+              child: const Icon(Icons.person, color: Colors.white, size: 30), // Placeholder icon
             ),
-            const SizedBox(height: 30),
-            const Text("THE VISION", style: TextStyle(color: Color(0xFF16A085), fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            const Text(
-              "To bridge the gap between theoretical academia and industrial application through decentralized robotic ecosystems and community-driven projects.",
-              style: TextStyle(color: Colors.white70, height: 1.5),
-            ),
-            const SizedBox(height: 40),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(15)),
-              child: const Column(
+            const SizedBox(width: 20),
+            // Text Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("ESTABLISHED", style: TextStyle(color: Color(0xFFD8CFB4), fontSize: 10)),
-                  Text("2014", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    role,
+                    style: const TextStyle(
+                      color: Color(0xFF16A085),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "USN: $usn",
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
-import 'chat.dart';
-import 'activity.dart';
-import 'profile.dart';
+
+// Assuming these files exist in your project
+// import 'chat.dart';
+// import 'activity.dart';
+// import 'profile.dart';
 import 'committees.dart';
+
+void main() {
+  runApp(MaterialApp(
+    theme: ThemeData.dark().copyWith(
+      scaffoldBackgroundColor: Colors.black,
+      appBarTheme: const AppBarTheme(backgroundColor: Colors.black),
+    ),
+    home: const HomeScreen(),
+  ));
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,30 +24,52 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
-  final List<Widget> _tabs = [const HomeContent(), const ChatPage(), const ActivityPage()];
+  
+  // Dummy widgets for missing imports to keep code runnable
+  final List<Widget> _tabs = [
+    const HomeContent(), 
+    const Center(child: Text("Chat Page")), // const ChatPage()
+    const Center(child: Text("Activity Page")), // const ActivityPage()
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // LOGO CLICK -> ABOUT CLUB
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const AboutRoboCellPage())),
-            child: Image.asset('assets/rcell.jpg'),
-          ),
-        ),
-        title: const Text("ROBOCELL"),
+  leading: Padding(
+    padding: const EdgeInsets.all(8.0),
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (c) => const CommitteesPage()));
+      },
+      child: Image.asset('assets/rcell.jpg'), // Ensure this exists in pubspec.yaml
+    ),
+  ),
+  title: InkWell(
+    onTap: () => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (c) => const AboutRoboCellPage()),
+    ),
+    child: const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      child: Text("ROBOCELL", style: TextStyle(letterSpacing: 2)),
+    ),
+  ),
+  // ... rest of your actions
+
+        // --- CLICKABLE TITLE ---
+       
         actions: [
           IconButton(
             icon: const CircleAvatar(
-              radius: 15, 
-              backgroundColor: Color(0xFF16A085), 
-              child: Icon(Icons.person, size: 18, color: Colors.black)
+              radius: 15,
+              backgroundColor: Color(0xFF16A085),
+              child: Icon(Icons.person, size: 18, color: Colors.black),
             ),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const ProfilePage())),
+            onPressed: () {
+              // Navigator.push(context, MaterialPageRoute(builder: (c) => const ProfilePage()));
+            },
           )
         ],
       ),
@@ -62,60 +96,124 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> feedItems = [
+      _buildMeetingPost(),
+      _buildStandardPost(
+        label: "ACHIEVEMENTS",
+        icon: Icons.stars,
+        author: "Media Team",
+        time: "2 hours ago",
+        text: "Massive congratulations to the team for securing the top spot at Anveshana '26!",
+      ),
+      _buildStandardPost(
+        label: "EXTERNAL OPPORTUNITY",
+        icon: Icons.explore,
+        author: "IIT Madras",
+        time: "Apr 28 Deadline",
+        text: "IITM Shaastra 2026 is now open for registrations. Don't miss out!",
+      ),
+    ];
+
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _sectionTitle("NEXT MEETING"),
-                _buildMeetingCard(),
-                const SizedBox(height: 25),
-                _sectionTitle("EXTERNAL OPPORTUNITIES"),
-                SizedBox(
-                  height: 100,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      _buildExternalCard("IITM Shaastra", "April 28"),
-                      _buildExternalCard("NITK Incident", "May 05"),
-                      _buildExternalCard("RVCE 8th Mile", "May 12"),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 25),
-                _sectionTitle("WALL OF FAME"),
-              ],
+        const SliverPadding(
+          padding: EdgeInsets.symmetric(vertical: 15),
+          sliver: SliverToBoxAdapter(
+            child: Center(
+              child: Text("COMMUNITY FEED", 
+                style: TextStyle(color: Colors.grey, fontSize: 10, letterSpacing: 2, fontWeight: FontWeight.bold)
+              ),
             ),
           ),
         ),
         SliverList(
           delegate: SliverChildBuilderDelegate(
-            (context, index) => _buildAchievementCard(index),
-            childCount: 5, 
+            (context, index) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: feedItems[index % feedItems.length],
+            ),
+            childCount: 6,
           ),
         ),
       ],
     );
   }
 
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Text(title, style: const TextStyle(color: Color(0xFFD8CFB4), letterSpacing: 1.5, fontWeight: FontWeight.bold, fontSize: 12)),
+  Widget _feedWrapper({required String label, required IconData icon, required Widget child}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 12, color: const Color(0xFF16A085)),
+              const SizedBox(width: 6),
+              Text(label, 
+                style: const TextStyle(color: Color(0xFFD8CFB4), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
     );
   }
 
-  Widget _buildMeetingCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF16A085).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: const Color(0xFF16A085).withOpacity(0.5)),
+  Widget _buildStandardPost({
+    required String label,
+    required IconData icon,
+    required String author,
+    required String time,
+    required String text,
+  }) {
+    return _feedWrapper(
+      label: label,
+      icon: icon,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const CircleAvatar(
+                radius: 12, 
+                backgroundColor: Colors.white10, 
+                child: Icon(Icons.person, size: 14, color: Colors.white)
+              ),
+              const SizedBox(width: 8),
+              Text(author, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              Text(time, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 180, 
+            width: double.infinity, 
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05), 
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.image, color: Colors.white12, size: 40),
+          ),
+          const SizedBox(height: 12),
+          Text(text, style: const TextStyle(fontSize: 13, color: Colors.white70, height: 1.4)),
+        ],
       ),
+    );
+  }
+
+  Widget _buildMeetingPost() {
+    return _feedWrapper(
+      label: "UPCOMING MEETING",
+      icon: Icons.event,
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -126,54 +224,58 @@ class HomeContent extends StatelessWidget {
               Text("4:00 PM", style: TextStyle(color: Color(0xFF16A085), fontWeight: FontWeight.bold)),
             ],
           ),
-          SizedBox(height: 8),
-          Text("Venue: Robotics Lab (Room 402)", style: TextStyle(color: Colors.white70, fontSize: 13)),
-          Divider(height: 20, color: Colors.white24),
-          Text("AGENDA:", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFD8CFB4))),
-          Text("• Robothon '26 Budget\n• Lab Inventory Audit\n• Outreach review", 
-            style: TextStyle(fontSize: 12, height: 1.5, color: Colors.white60)),
+          SizedBox(height: 4),
+          Text("Venue: Robotics Lab (Room 402)", style: TextStyle(color: Colors.white60, fontSize: 13)),
+          Divider(height: 24, color: Colors.white10),
+          Text("AGENDA:", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+          SizedBox(height: 4),
+          Text("• Robothon '26 Budget\n• Lab Inventory Audit", style: TextStyle(fontSize: 12, height: 1.6, color: Colors.white70)),
         ],
       ),
     );
   }
+}
 
-  Widget _buildExternalCard(String name, String date) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white12)),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          Text(date, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-        ],
-      ),
-    );
-  }
+// --- NEW PAGE FOR ABOUT ROBOCELL ---
+class AboutRoboCellPage extends StatelessWidget {
+  const AboutRoboCellPage({super.key});
 
-  Widget _buildAchievementCard(int index) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.white10)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const ListTile(
-            leading: CircleAvatar(backgroundColor: Colors.white10, child: Icon(Icons.campaign, color: Color(0xFF16A085))),
-            title: Text("Media Team", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-            subtitle: Text("2 hours ago", style: TextStyle(fontSize: 11)),
-          ),
-          Container(height: 180, width: double.infinity, color: Colors.white10, child: const Icon(Icons.image, color: Colors.white24)),
-          const Padding(
-            padding: EdgeInsets.all(15.0),
-            child: Text(
-              "Massive congratulations to the team for securing the top spot at Anveshana '26! Their autonomous drone project impressed the judges.",
-              style: TextStyle(fontSize: 13, color: Colors.white70, height: 1.4),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("ABOUT ROBOCELL")),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Innovating the Future",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF16A085)),
             ),
-          ),
+            const SizedBox(height: 15),
+            Text(
+              "RoboCell is the official robotics club dedicated to fostering a culture of innovation, engineering excellence, and hands-on learning.",
+              style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.8), height: 1.5),
+            ),
+            const SizedBox(height: 30),
+            _buildInfoSection("Our Mission", "To empower students with technical skills in embedded systems, IoT, and AI."),
+            _buildInfoSection("Location", "Room 402, Bangalore Institute of Technology."),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection(String title, String desc) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+          const SizedBox(height: 5),
+          Text(desc, style: const TextStyle(fontSize: 14)),
         ],
       ),
     );
