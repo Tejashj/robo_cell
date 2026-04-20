@@ -25,7 +25,7 @@ class _MainNavigationState extends State<MainNavigation> {
     super.initState();
 
     _pages = [
-      const HomeContent(),
+      HomeContent(user: widget.user), // ✅ FIXED
       const ChatPage(),
       const ActivityPage(),
       const MeetingsHistoryPage(),
@@ -99,9 +99,8 @@ class _MainNavigationState extends State<MainNavigation> {
               icon: Icon(Icons.bolt_rounded), label: "Ops"),
           BottomNavigationBarItem(
               icon: Icon(Icons.meeting_room_rounded), label: "Meetings"),
-              BottomNavigationBarItem(
+          BottomNavigationBarItem(
               icon: Icon(Icons.info_outline), label: "About"),
-
         ],
       ),
     );
