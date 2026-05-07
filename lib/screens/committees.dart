@@ -1,172 +1,241 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-
-class CommitteesPage extends StatelessWidget {
+class CommitteesPage extends StatefulWidget {
   const CommitteesPage({super.key});
 
-  // This ensures the single/double cards match the width of the 4-row cards
-  double _getCardWidth(BuildContext context) {
-    // Screen width - padding - gaps / 4 columns
-    return (MediaQuery.of(context).size.width - 32 - (8 * 3)) / 4;
+  @override
+  State<CommitteesPage> createState() => _CommitteesPageState();
+}
+
+class _CommitteesPageState extends State<CommitteesPage> {
+  final supabase = Supabase.instance.client;
+
+  final List<String> committeeOrder = [
+    "Office Bearers",
+    "Marketing",
+    "Management",
+    "Content",
+    "Design",
+    "Creative",
+    "Media",
+    "Newsletter",
+    "Service",
+    "Sports",
+    "Cultural",
+    "Industrial",
+    "Welfare",
+    "Disciplinary",
+  ];
+
+  Future<Map<String, List<dynamic>>> fetchCommittees() async {
+    final response = await supabase
+        .from('users')
+        .select('name, role, photo_url, committees(name)')
+        .order('created_at');
+
+    Map<String, List<dynamic>> grouped = {};
+
+    for (var committee in committeeOrder) {
+      grouped[committee] = [];
+    }
+
+    for (var user in response) {
+      final committeeName = user['committees']['name'];
+
+      if (grouped.containsKey(committeeName)) {
+        grouped[committeeName]!.add(user);
+      }
+    }
+
+    return grouped;
   }
 
   @override
   Widget build(BuildContext context) {
-    final double cardWidth = _getCardWidth(context);
-
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("ROBOCELL COMMITTEE", 
-          style: TextStyle(letterSpacing: 3, fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: const Text(
+          "ROBOCELL HERITAGE",
+          style: TextStyle(
+            letterSpacing: 2,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        child: Column(
-          children: [
-            // --- FACULTY ADVISORS ---
-            _sectionLabel("FACULTY "),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                SizedBox(width: cardWidth, child: const MemberCard(name: "Dr. Advisor", role: "Faculty", img: "assets/f1.jpg")),
-                SizedBox(width: cardWidth, child: const MemberCard(name: "Prof. Advisor", role: "Faculty", img: "assets/f2.jpg")),
-              ],
-            ),
-            const SizedBox(height: 30),
-
-            // --- PRESIDENT ---
-            _sectionLabel("CORE COMMITTEE"),
-            Center(
-              child: SizedBox(
-                width: cardWidth,
-                child: const MemberCard(name: "Tejas H J", role: "President", img: "assets/tejas.jpg"),
+      body: FutureBuilder<Map<String, List<dynamic>>>(
+        future: fetchCommittees(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF16A085),
               ),
-            ),
-            const SizedBox(height: 20),
+            );
+          }
 
-            // --- VICE PRESIDENTS ---
-            Wrap(
-              spacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                SizedBox(width: cardWidth, child: const MemberCard(name: "Lasya N S", role: "VP", img: "assets/lasya.jpg")),
-                SizedBox(width: cardWidth, child: const MemberCard(name: "VP Name", role: "VP", img: "assets/vp2.jpg")),
-              ],
-            ),
-            const SizedBox(height: 20),
+          final committees = snapshot.data!;
 
-            // --- CORE EXECUTIVES (The 4-Row Reference) ---
-           
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _fixedCard(cardWidth, "Name", "Treasurer", "assets/m1.jpg"),
-                _fixedCard(cardWidth, "Name", "Secretary", "assets/m2.jpg"),
-                _fixedCard(cardWidth, "Name", "Joint Sec", "assets/m3.jpg"),
-                _fixedCard(cardWidth, "Name", "Dir. Ops", "assets/m4.jpg"),
-              ],
-            ),
-            const SizedBox(height: 40),
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: committeeOrder.length,
+            itemBuilder: (context, index) {
+              final committeeName = committeeOrder[index];
+              final members = committees[committeeName]!;
 
-            // --- SUB-COMMITTEES ---
-            _sectionLabel("MANAGEMENT COMMITTEE"),
-            Wrap(
-              spacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                SizedBox(width: cardWidth, child: const MemberCard(name: "Mgt Lead", role: "Lead", img: "assets/mgmt1.jpg")),
-                SizedBox(width: cardWidth, child: const MemberCard(name: "Mgt Lead", role: "Lead", img: "assets/mgmt2.jpg")),
-              ],
-            ),
-          ],
-        ),
+              if (members.isEmpty) return const SizedBox();
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
+                    // 🔥 COMMITTEE TITLE
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            committeeName.toUpperCase(),
+                            style: const TextStyle(
+                              color: Color(0xFF16A085),
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Container(
+                            width: 80,
+                            height: 2,
+                            color: const Color(0xFF16A085),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    // 🔥 MEMBERS GRID
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: members.length,
+                      gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.62,
+                      ),
+                      itemBuilder: (context, i) {
+                        final member = members[i];
+
+                        return _MemberCard(
+                          name: member['name'] ?? '',
+                          role: member['role'] ?? '',
+                          image: member['photo_url'] ?? '',
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
-
-  Widget _sectionLabel(String label) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: Text(label, style: const TextStyle(color: Color(0xFF16A085), fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 2)),
-    );
-  }
-
-  Widget _fixedCard(double width, String n, String r, String i) {
-    return SizedBox(width: width, child: MemberCard(name: n, role: r, img: i));
-  }
 }
 
-class MemberCard extends StatefulWidget {
-  final String name, role, img;
+class _MemberCard extends StatelessWidget {
+  final String name;
+  final String role;
+  final String image;
 
-  const MemberCard({super.key, required this.name, required this.role, required this.img});
-
-  @override
-  State<MemberCard> createState() => _MemberCardState();
-}
-
-class _MemberCardState extends State<MemberCard> {
-  bool _isTapped = false;
+  const _MemberCard({
+    required this.name,
+    required this.role,
+    required this.image,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => setState(() => _isTapped = !_isTapped),
-      onDoubleTap: () async {
-        final Uri url = Uri.parse('https://linkedin.com');
-        if (await canLaunchUrl(url)) await launchUrl(url);
-      },
-      child: AspectRatio(
-        aspectRatio: 0.75, // Standard vertical card ratio
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            image: DecorationImage(
-              image: AssetImage(widget.img),
-              fit: BoxFit.cover,
-              colorFilter: ColorFilter.mode(
-                Colors.black.withOpacity(_isTapped ? 0.8 : 0.4), 
-                BlendMode.darken
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        children: [
+
+          // 🔥 PHOTO
+          Expanded(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+              child: image.isNotEmpty
+                  ? Image.network(
+                image,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              )
+                  : Container(
+                color: Colors.white10,
+                child: const Center(
+                  child: Icon(
+                    Icons.person,
+                    color: Color(0xFF16A085),
+                    size: 40,
+                  ),
+                ),
               ),
             ),
-            border: Border.all(
-              color: _isTapped ? const Color(0xFF16A085) : Colors.white10,
-              width: 1,
-            ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(6.0),
+
+          // 🔥 INFO
+          Padding(
+            padding: const EdgeInsets.all(10),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  widget.name.toUpperCase(),
+                  name.toUpperCase(),
                   textAlign: TextAlign.center,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 8),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                    letterSpacing: 1,
+                  ),
                 ),
+
+                const SizedBox(height: 6),
+
                 Text(
-                  widget.role,
+                  role,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFF16A085), fontWeight: FontWeight.w600, fontSize: 7),
+                  style: const TextStyle(
+                    color: Color(0xFF16A085),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                if (_isTapped) ...[
-                  const SizedBox(height: 4),
-                  const Text("1BI23RI...", style: TextStyle(color: Colors.white54, fontSize: 6)),
-                ]
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }

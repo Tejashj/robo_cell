@@ -31,79 +31,102 @@ class _HomeContentState extends State<HomeContent> {
     return data;
   }
 
+  // 🔥 Swipe Refresh
+  Future<void> _refreshPosts() async {
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
 
         Expanded(
-          child: FutureBuilder(
-            future: fetchPosts(),
-            builder: (context, snapshot) {
+          child: RefreshIndicator(
+            color: const Color(0xFF16A085),
+            backgroundColor: Colors.black,
 
-              if (!snapshot.hasData) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF16A085)),
-                );
-              }
+            onRefresh: _refreshPosts,
 
-              final posts = snapshot.data!;
+            child: FutureBuilder(
+              future: fetchPosts(),
+              builder: (context, snapshot) {
 
-              if (posts.isEmpty) {
-                return const Center(
-                  child: Text(
-                    "No posts yet",
-                    style: TextStyle(color: Colors.white54),
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                itemCount: posts.length,
-                itemBuilder: (context, index) {
-                  final post = posts[index];
-
-                  final user = post['users'];
-
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.04),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-
-                        // 🔥 CATEGORY + NAME + ROLE
-                        Text(
-                          "${post['category']} - ${user?['name'] ?? 'Unknown'}, ${user?['role'] ?? ''}",
-                          style: const TextStyle(
-                            color: Color(0xFF16A085),
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
-                          ),
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        // DESCRIPTION
-                        Text(
-                          post['description'],
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+                if (!snapshot.hasData) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF16A085),
                     ),
                   );
-                },
-              );
-            },
+                }
+
+                final posts = snapshot.data!;
+
+                if (posts.isEmpty) {
+                  return ListView(
+                    children: const [
+                      SizedBox(height: 300),
+                      Center(
+                        child: Text(
+                          "No posts yet",
+                          style: TextStyle(color: Colors.white54),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                return ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    final post = posts[index];
+
+                    final user = post['users'];
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.04),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+
+                          // 🔥 CATEGORY + NAME + ROLE
+                          Text(
+                            "${post['category']} - ${user?['name'] ?? 'Unknown'}, ${user?['role'] ?? ''}",
+                            style: const TextStyle(
+                              color: Color(0xFF16A085),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1,
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          // 🔥 DESCRIPTION
+                          Text(
+                            post['description'],
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ),
 
