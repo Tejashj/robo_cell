@@ -1,76 +1,221 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 import 'screens/splashscreen.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
 
-  // 🔐 Load ENV
-  await dotenv.load(fileName: ".env");
+  WidgetsFlutterBinding
+      .ensureInitialized();
 
-  // 🔥 Initialize Firebase
-  await Firebase.initializeApp();
-
-  // 🚀 Initialize Supabase
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+  /// LOAD ENV
+  await dotenv.load(
+    fileName: ".env",
   );
 
-  runApp(const RoboCellApp());
+  /// SUPABASE INIT
+  await Supabase.initialize(
+
+    url:
+        dotenv.env[
+            'SUPABASE_URL']!,
+
+    anonKey:
+        dotenv.env[
+            'SUPABASE_ANON_KEY']!,
+  );
+
+  runApp(
+    const RoboCellApp(),
+  );
 }
 
-class RoboCellApp extends StatelessWidget {
-  const RoboCellApp({super.key});
+class RoboCellApp
+    extends StatelessWidget {
+
+  const RoboCellApp({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
+
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
+
+      debugShowCheckedModeBanner:
+          false,
+
+      title: 'ROBO CELL',
 
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
-        primaryColor: const Color(0xFF16A085),
-        hintColor: const Color(0xFFD8CFB4),
 
-        // 🔤 Fonts
-        textTheme: GoogleFonts.lexendTextTheme(
-          ThemeData.dark().textTheme,
-        ).copyWith(
-          displayLarge: GoogleFonts.lexend(
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.5,
-          ),
-          titleLarge: GoogleFonts.lexend(
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
-          bodyMedium: GoogleFonts.lexend(
-            fontWeight: FontWeight.w400,
+        brightness:
+            Brightness.dark,
+
+        scaffoldBackgroundColor:
+            Colors.black,
+
+        primaryColor:
+            const Color(
+          0xFF16A085,
+        ),
+
+        textTheme:
+            GoogleFonts.poppinsTextTheme(
+          ThemeData.dark()
+              .textTheme,
+        ),
+
+        appBarTheme:
+            const AppBarTheme(
+
+          backgroundColor:
+              Colors.black,
+
+          elevation: 0,
+
+          centerTitle: true,
+
+          foregroundColor:
+              Color(
+            0xFFD8CFB4,
           ),
         ),
 
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
-          foregroundColor: Color(0xFFD8CFB4),
-          centerTitle: true,
-          elevation: 0,
-          titleTextStyle: TextStyle(
-            fontFamily: 'Lexend',
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            letterSpacing: 1.2,
-            color: Color(0xFFD8CFB4),
+        snackBarTheme:
+            const SnackBarThemeData(
+
+          backgroundColor:
+              Color(
+            0xFF16A085,
+          ),
+
+          contentTextStyle:
+              TextStyle(
+            color: Colors.black,
+          ),
+        ),
+
+        elevatedButtonTheme:
+            ElevatedButtonThemeData(
+
+          style:
+              ElevatedButton.styleFrom(
+
+            backgroundColor:
+                const Color(
+              0xFF16A085,
+            ),
+
+            foregroundColor:
+                Colors.black,
+
+            elevation: 0,
+
+            shape:
+                RoundedRectangleBorder(
+
+              borderRadius:
+                  BorderRadius.circular(
+                18,
+              ),
+            ),
+          ),
+        ),
+
+        inputDecorationTheme:
+            InputDecorationTheme(
+
+          filled: true,
+
+          fillColor:
+              Colors.white
+                  .withOpacity(
+            0.03,
+          ),
+
+          hintStyle:
+              const TextStyle(
+            color: Colors.grey,
+          ),
+
+          border:
+              OutlineInputBorder(
+
+            borderRadius:
+                BorderRadius.circular(
+              18,
+            ),
+
+            borderSide:
+                BorderSide.none,
+          ),
+
+          enabledBorder:
+              OutlineInputBorder(
+
+            borderRadius:
+                BorderRadius.circular(
+              18,
+            ),
+
+            borderSide:
+                BorderSide.none,
+          ),
+
+          focusedBorder:
+              OutlineInputBorder(
+
+            borderRadius:
+                BorderRadius.circular(
+              18,
+            ),
+
+            borderSide:
+                const BorderSide(
+
+              color:
+                  Color(
+                0xFF16A085,
+              ),
+            ),
+          ),
+        ),
+
+        bottomNavigationBarTheme:
+            BottomNavigationBarThemeData(
+
+          backgroundColor:
+              Colors.black,
+
+          selectedItemColor:
+              const Color(
+            0xFF16A085,
+          ),
+
+          unselectedItemColor:
+              Colors.grey.shade600,
+
+          selectedLabelStyle:
+              const TextStyle(
+
+            fontWeight:
+                FontWeight.bold,
+
+            fontSize: 11,
+          ),
+
+          unselectedLabelStyle:
+              const TextStyle(
+            fontSize: 10,
           ),
         ),
       ),
 
-      home: const SplashScreen(),
+      home:
+          const SplashScreen(),
     );
   }
 }

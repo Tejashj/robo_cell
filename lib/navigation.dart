@@ -1,71 +1,187 @@
 import 'package:flutter/material.dart';
+import 'package:robo_cell/screens/feedpage.dart';
+import 'package:robo_cell/screens/home.dart';
+import 'package:robo_cell/screens/meetings.dart';
 import 'package:robo_cell/screens/about.dart';
-import 'screens/home.dart';
-import 'screens/chat.dart';
-import 'screens/activity.dart';
-import 'screens/profile.dart';
-import 'screens/meetings.dart';
+import 'package:robo_cell/screens/profile.dart';
+import 'package:robo_cell/screens/scanattendance.dart';
 
 class MainNavigation extends StatefulWidget {
+
   final Map<String, dynamic> user;
 
-  const MainNavigation({super.key, required this.user});
+  const MainNavigation({
+    super.key,
+    required this.user,
+  });
 
   @override
-  State<MainNavigation> createState() => _MainNavigationState();
+  State<MainNavigation> createState() =>
+      _MainNavigationState();
 }
 
-class _MainNavigationState extends State<MainNavigation> {
-  int _currentIndex = 0;
+class _MainNavigationState
+    extends State<MainNavigation> {
 
-  late final List<Widget> _pages;
+  int currentIndex = 0;
+
+  late List<Widget> pages;
 
   @override
   void initState() {
+
     super.initState();
 
-    _pages = [
-      HomeContent(user: widget.user), // ✅ FIXED
-      const ChatPage(),
-      const ActivityPage(),
-      const MeetingsHistoryPage(),
+    pages = [
+
+      HomeContent(
+        user: widget.user,
+      ),
+
+      FeedPage(
+        user: widget.user,
+      ),
+
+      MeetingsPage(
+        user: widget.user,
+      ),
+
+      ScanAttendancePage(
+        user: widget.user,
+      ),
+
       const AboutRoboCellPage(),
     ];
   }
 
   @override
   Widget build(BuildContext context) {
+
+    final photo =
+        widget.user['photo_url'];
+
     return Scaffold(
+
+      backgroundColor:
+          Colors.black,
+
       appBar: AppBar(
+
+        backgroundColor:
+            Colors.black,
+
+        elevation: 0,
+
         leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Image.asset('assets/rcell.jpg'),
+
+          padding:
+              const EdgeInsets.all(
+            8,
+          ),
+
+          child: ClipRRect(
+
+            borderRadius:
+                BorderRadius.circular(
+              12,
+            ),
+
+            child: Image.asset(
+              'assets/rcell.jpg',
+              fit: BoxFit.cover,
+            ),
+          ),
         ),
-        title: const Text("ROBOCELL"),
+
+        title: const Text(
+
+          "ROBO CELL",
+
+          style: TextStyle(
+
+            color:
+                Color(
+              0xFFD8CFB4,
+            ),
+
+            fontWeight:
+                FontWeight.bold,
+
+            letterSpacing:
+                1.5,
+          ),
+        ),
+
+        centerTitle: true,
+
         actions: [
+
           Padding(
-            padding: const EdgeInsets.only(right: 15.0),
+
+            padding:
+                const EdgeInsets.only(
+              right: 14,
+            ),
+
             child: GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProfilePage(user: widget.user),
-                ),
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF16A085),
-                  shape: BoxShape.circle,
-                ),
-                child: const CircleAvatar(
-                  radius: 14,
-                  backgroundColor: Colors.black,
-                  child: Icon(
-                    Icons.person_outline,
-                    size: 18,
-                    color: Color(0xFF16A085),
+
+              onTap: () {
+
+                Navigator.push(
+
+                  context,
+
+                  MaterialPageRoute(
+
+                    builder: (_) {
+
+                      return ProfilePage(
+                        user: widget.user,
+                      );
+                    },
                   ),
+                );
+              },
+
+              child: CircleAvatar(
+
+                radius: 19,
+
+                backgroundColor:
+                    const Color(
+                  0xFF16A085,
+                ),
+
+                child: CircleAvatar(
+
+                  radius: 17,
+
+                  backgroundColor:
+                      Colors.black,
+
+                  backgroundImage:
+                      photo != null &&
+                              photo != ''
+                          ? NetworkImage(
+                              photo,
+                            )
+                          : null,
+
+                  child:
+                      photo == null ||
+                              photo == ''
+                          ? const Icon(
+
+                              Icons.person,
+
+                              size: 18,
+
+                              color:
+                                  Color(
+                                0xFF16A085,
+                              ),
+                            )
+                          : null,
                 ),
               ),
             ),
@@ -74,34 +190,125 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
 
       body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
+
+        index: currentIndex,
+
+        children: pages,
       ),
 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        selectedItemColor: const Color(0xFF16A085),
-        unselectedItemColor: const Color(0xFFD8CFB4).withOpacity(0.4),
-        backgroundColor: Colors.black,
-        type: BottomNavigationBarType.fixed,
-        showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
+      bottomNavigationBar:
+          Container(
+
+        decoration:
+            BoxDecoration(
+
+          color: Colors.black,
+
+          boxShadow: [
+
+            BoxShadow(
+
+              color:
+                  Colors.black
+                      .withOpacity(
+                0.6,
+              ),
+
+              blurRadius: 20,
+            ),
+          ],
         ),
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_rounded), label: "Feed"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.forum_rounded), label: "Chat"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.bolt_rounded), label: "Ops"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.meeting_room_rounded), label: "Meetings"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.info_outline), label: "About"),
-        ],
+
+        child: BottomNavigationBar(
+
+          currentIndex:
+              currentIndex,
+
+          onTap: (index) {
+
+            setState(() {
+
+              currentIndex =
+                  index;
+            });
+          },
+
+          backgroundColor:
+              Colors.black,
+
+          type:
+              BottomNavigationBarType.fixed,
+
+          selectedItemColor:
+              const Color(
+            0xFF16A085,
+          ),
+
+          unselectedItemColor:
+              Colors.grey,
+
+          selectedLabelStyle:
+              const TextStyle(
+
+            fontWeight:
+                FontWeight.bold,
+
+            fontSize: 11,
+          ),
+
+          unselectedLabelStyle:
+              const TextStyle(
+            fontSize: 10,
+          ),
+
+          items: const [
+
+            BottomNavigationBarItem(
+
+              icon: Icon(
+                Icons.dashboard_rounded,
+              ),
+
+              label: "Home",
+            ),
+
+            BottomNavigationBarItem(
+
+              icon: Icon(
+                Icons.feed_rounded,
+              ),
+
+              label: "Feed",
+            ),
+
+            BottomNavigationBarItem(
+
+              icon: Icon(
+                Icons.calendar_month_rounded,
+              ),
+
+              label: "Meetings",
+            ),
+
+            BottomNavigationBarItem(
+
+              icon: Icon(
+                Icons.qr_code_scanner_rounded,
+              ),
+
+              label: "Attendance",
+            ),
+
+            BottomNavigationBarItem(
+
+              icon: Icon(
+                Icons.info_outline_rounded,
+              ),
+
+              label: "About",
+            ),
+          ],
+        ),
       ),
     );
   }
