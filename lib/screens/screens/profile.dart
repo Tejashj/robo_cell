@@ -46,6 +46,17 @@ class _ProfilePageState
         .trim()
         .isEmpty) {
 
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+
+        const SnackBar(
+          content:
+              Text(
+            "Enter LinkedIn URL",
+          ),
+        ),
+      );
+
       return;
     }
 
@@ -289,7 +300,7 @@ class _ProfilePageState
 
           children: [
 
-            /// TOP PROFILE CARD
+            /// PROFILE TOP CARD
             Container(
 
               width:
@@ -340,33 +351,71 @@ class _ProfilePageState
                       0xFF16A085,
                     ),
 
-                    child: CircleAvatar(
+                    child: ClipOval(
 
-                      radius: 56,
-
-                      backgroundColor:
-                          Colors.black,
-
-                      backgroundImage:
-
+                      child:
                           photo != null &&
                                   photo
                                       .toString()
                                       .isNotEmpty
 
-                              ? NetworkImage(
+                              ? Image.network(
+
                                   photo,
+
+                                  width: 112,
+
+                                  height: 112,
+
+                                  fit: BoxFit.cover,
+
+                                  loadingBuilder:
+                                      (
+                                        context,
+                                        child,
+                                        progress,
+                                      ) {
+
+                                    if (progress ==
+                                        null) {
+
+                                      return child;
+                                    }
+
+                                    return const Center(
+
+                                      child:
+                                          CircularProgressIndicator(
+                                        color:
+                                            Color(
+                                          0xFF16A085,
+                                        ),
+                                      ),
+                                    );
+                                  },
+
+                                  errorBuilder:
+                                      (
+                                        context,
+                                        error,
+                                        stackTrace,
+                                      ) {
+
+                                    return const Icon(
+
+                                      Icons.person,
+
+                                      size: 55,
+
+                                      color:
+                                          Color(
+                                        0xFF16A085,
+                                      ),
+                                    );
+                                  },
                                 )
 
-                              : null,
-
-                      child:
-                          photo == null ||
-                                  photo
-                                      .toString()
-                                      .isEmpty
-
-                              ? const Icon(
+                              : const Icon(
 
                                   Icons.person,
 
@@ -376,9 +425,7 @@ class _ProfilePageState
                                       Color(
                                     0xFF16A085,
                                   ),
-                                )
-
-                              : null,
+                                ),
                     ),
                   ),
 
@@ -442,7 +489,7 @@ class _ProfilePageState
               height: 30,
             ),
 
-            /// DETAILS
+            /// INFO CARDS
             infoCard(
 
               icon:
@@ -483,7 +530,7 @@ class _ProfilePageState
                       '',
             ),
 
-            /// LINKEDIN
+            /// LINKEDIN SECTION
             Container(
 
               width:
@@ -677,7 +724,7 @@ class _ProfilePageState
               height: 30,
             ),
 
-            /// LOGOUT
+            /// LOGOUT BUTTON
             SizedBox(
 
               width:

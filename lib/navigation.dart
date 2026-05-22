@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:robo_cell/screens/feedpage.dart';
-import 'package:robo_cell/screens/home.dart';
-import 'package:robo_cell/screens/meetings.dart';
-import 'package:robo_cell/screens/about.dart';
-import 'package:robo_cell/screens/profile.dart';
-import 'package:robo_cell/screens/scanattendance.dart';
+import 'package:robo_cell/screens/screens/feedpage.dart';
+import 'package:robo_cell/screens/screens/home.dart';
+import 'package:robo_cell/screens/screens/meetings.dart';
+import 'package:robo_cell/screens/screens/about.dart';
+import 'package:robo_cell/screens/screens/profile.dart';
 
 class MainNavigation extends StatefulWidget {
 
@@ -43,10 +42,6 @@ class _MainNavigationState
       ),
 
       MeetingsPage(
-        user: widget.user,
-      ),
-
-      ScanAttendancePage(
         user: widget.user,
       ),
 
@@ -288,15 +283,6 @@ class _MainNavigationState
               ),
 
               label: "Meetings",
-            ),
-
-            BottomNavigationBarItem(
-
-              icon: Icon(
-                Icons.qr_code_scanner_rounded,
-              ),
-
-              label: "Attendance",
             ),
 
             BottomNavigationBarItem(

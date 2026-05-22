@@ -1,7 +1,5 @@
 name: robo_cell
-
 description: ROBO CELL APPLICATION
-
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -10,7 +8,6 @@ environment:
   sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
-
   flutter:
     sdk: flutter
 
@@ -28,12 +25,6 @@ dependencies:
   # URL LAUNCHER
   url_launcher: ^6.2.6
 
-  # QR GENERATOR
-  qr_flutter: ^4.1.0
-
-  # QR SCANNER
-  mobile_scanner: ^5.1.1
-
   # IMAGE PICKER
   image_picker: ^1.1.2
 
@@ -47,27 +38,43 @@ dependencies:
   share_plus: ^9.0.0
 
 dev_dependencies:
-
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^3.0.0
+
+  # APP ICON GENERATOR
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
 
   uses-material-design: true
 
   assets:
-
     - assets/
     - .env
 
+# =========================================================
+# APP ICON CONFIGURATION
+# =========================================================
 
-
-# This should be at the root level, not indented under 'flutter'
 flutter_launcher_icons:
-  android: "launcher_icon"
+
+  # GENERATE FOR BOTH
+  android: true
   ios: true
-  image_path: "assets/rcell.jpg" # Ensure this path matches your assets folder
-  adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/rcell.jpg"
+
+  # MAIN ICON IMAGE
+  image_path: "assets/appicon1.jpg"
+
+  # ANDROID ADAPTIVE ICONS
+  adaptive_icon_background: "#000000"
+
+  # USE SAME PRE-STYLED IMAGE
+  adaptive_icon_foreground: "assets/appicon1.jpg"
+
+  # SLIGHT PADDING
+  adaptive_icon_foreground_inset: 80
+
+  # OPTIONAL
+  remove_alpha_ios: true

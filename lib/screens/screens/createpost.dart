@@ -37,7 +37,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               await Supabase.instance.client.from('posts').insert({
                 'category': _selectedCategory,
                 'description': text,
-                'user_id': widget.user['id'], // 🔥 LINK USER
+                'user_id': widget.user['id'], 
               });
 
               Navigator.pop(context);

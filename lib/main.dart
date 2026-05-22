@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'screens/splashscreen.dart';
+import 'screens/screens/splashscreen.dart';
 
 Future<void> main() async {
 
