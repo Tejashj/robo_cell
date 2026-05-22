@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -6,396 +7,235 @@ class CommitteesPage extends StatefulWidget {
   const CommitteesPage({super.key});
 
   @override
-  State<CommitteesPage> createState() =>
-      _CommitteesPageState();
+  State<CommitteesPage> createState() => _CommitteesPageState();
 }
 
-class _CommitteesPageState
-    extends State<CommitteesPage> {
-  final supabase =
-      Supabase.instance.client;
+class _CommitteesPageState extends State<CommitteesPage> {
+  final supabase = Supabase.instance.client;
+  int? flippedCardId;
+  
+  // Cache the future here to prevent infinite loop fetches on setState
+  late Future<List<Map<String, dynamic>>> _hierarchyFuture;
 
-  int? flippedCard;
+  @override
+  void initState() {
+    super.initState();
+    _hierarchyFuture = fetchHierarchyData();
+  }
 
-  final List<String>
-      committeeOrder = [
-    "Faculty",
-    "Office Bearers",
-    "Management",
-    "Marketing",
-    "Content",
-    "Design",
-    "Creative",
-    "Media",
-    "Newsletter",
-    "Service",
-    "Sports",
-    "Cultural",
-    "Industrial",
-    "Student Welfare",
-    "Disciplinary",
-  ];
-
-  Color committeeColor(
-    String committee,
-  ) {
-    switch (
-        committee.toLowerCase()) {
+  Color committeeColor(String committee) {
+    switch (committee.toLowerCase()) {
       case 'faculty':
-        return const Color(0xFF16A085);
-
+        return const Color.fromARGB(255, 249, 250, 250);
       case 'office bearers':
-        return const Color(0xFF16A085);
-
-      case 'management':
-        return const Color(0xFF16A085);
-
-      case 'marketing':
-        return const Color(0xFF16A085);
-
-      case 'content':
-        return const Color(0xFF16A085);
-
-      case 'design':
-        return const Color(0xFF16A085);
-
-      case 'creative':
-        return const Color(0xFF16A085);
-
-      case 'media':
-        return const Color(0xFF16A085);
-
-      case 'newsletter':
-        return const Color(0xFF16A085);
-
-      case 'service':
-        return const Color(0xFF16A085);
-
-      case 'sports':
-        return const Color(0xFF16A085);
-      case 'cultural':
-        return const Color(0xFF16A085);
-
-      case 'industrial':
-        return const Color(0xFF16A085);
-
-      case 'student welfare':
-        return const Color(0xFF16A085);
-
-      case 'disciplinary':
-        return const Color(0xFF16A085);
-
+        return const Color.fromARGB(255, 235, 207, 93);
       default:
-        return const Color(
-          0xFF16A085,
-        );
+        return const Color(0xFF16A085);
     }
   }
 
-  int rolePriority(
-    String role,
+  Future<List<Map<String, dynamic>>> fetchHierarchyData() async {
+    // 1. Fetch from the structured view
+    final List<dynamic> response = await supabase
+        .from('users_hierarchy_view')
+        .select()
+        .order('display_order', ascending: true)
+        .order('id', ascending: true);
+
+    List<Map<String, dynamic>> hierarchyList =
+        List<Map<String, dynamic>>.from(response);
+
+    if (hierarchyList.isEmpty) return [];
+
+    // 2. Grab all IDs and fetch LinkedIn strings directly from 'users' table
+    final List<dynamic> userIds = hierarchyList.map((row) => row['id']).toList();
+    
+    final List<dynamic> usersResponse = await supabase
+        .from('users')
+        .select('id, linkedin')
+        .inFilter('id', userIds);
+
+    final Map<dynamic, String?> linkedinMapping = {
+      for (var row in usersResponse) row['id']: row['linkedin']?.toString().trim()
+    };
+
+    // 3. Merge the linkedin field into the view dataset
+    for (var row in hierarchyList) {
+      final userId = row['id'];
+      row['linkedin'] = linkedinMapping[userId];
+    }
+
+    return hierarchyList;
+  }
+
+  Map<String, List<Map<String, dynamic>>> groupMembersByCommittee(
+    List<Map<String, dynamic>> data,
   ) {
-    final r =
-        role.toLowerCase();
-
-    if (r.contains(
-      'faculty in charge',
-    )) return 0;
-
-    if (r.contains(
-      'faculty coordinator',
-    )) return 1;
-
-    if (r.contains(
-      'president',
-    )) return 2;
-
-    if (r.contains(
-      'vice president',
-    )) return 3;
-
-    if (r.contains(
-      'secretary',
-    )) return 4;
-
-    if (r.contains(
-      'joint secretary',
-    )) return 5;
-
-    if (r.contains(
-      'treasurer',
-    )) return 6;
-
-    if (r.contains(
-      'director',
-    )) return 7;
-
-    if (r == 'head') return 8;
-
-    if (r.contains(
-      'co-head',
-    )) return 9;
-
-    return 10;
-  }
-
-  Future<Map<String, List<dynamic>>>
-      fetchCommittees() async {
-    final response =
-        await supabase
-            .from('users')
-            .select('''
-              id,
-              name,
-              usn,
-              email,
-              role,
-              linkedin,
-              photo_url,
-              committees(name)
-            ''');
-
-    Map<String, List<dynamic>>
-        grouped = {};
-
-    for (var committee
-        in committeeOrder) {
-      grouped[committee] = [];
-    }
-
-    for (var user in response) {
-      final committee =
-          user['committees']
-                  ?['name'] ??
-              '';
-
-      final matchedCommittee =
-          committeeOrder.firstWhere(
-        (c) =>
-            c.toLowerCase() ==
-            committee.toLowerCase(),
-        orElse: () => '',
-      );
-
-      if (matchedCommittee
-          .isNotEmpty) {
-        grouped[
-                matchedCommittee]!
-            .add(user);
+    final Map<String, List<Map<String, dynamic>>> grouped = {};
+    for (var row in data) {
+      final String committeeName = row['committee_name'] ?? 'Other';
+      if (!grouped.containsKey(committeeName)) {
+        grouped[committeeName] = [];
       }
+      grouped[committeeName]!.add(row);
     }
-
-    for (var committee
-        in committeeOrder) {
-      grouped[committee]!.sort(
-        (a, b) {
-          return rolePriority(
-            a['role'] ?? '',
-          ).compareTo(
-            rolePriority(
-              b['role'] ?? '',
-            ),
-          );
-        },
-      );
-    }
-
     return grouped;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor:
-          Colors.black,
-
-      appBar: AppBar(
-        backgroundColor:
-            Colors.black,
-
-        centerTitle: true,
-
-        elevation: 0,
-
-        title: const Text(
-          "ROBO CELL HERITAGE",
-          style: TextStyle(
-            color: Color(
-              0xFFD8CFB4,
-            ),
-            fontWeight:
-                FontWeight.bold,
-            letterSpacing: 2,
-          ),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.black,
+          selectedItemColor: const Color(0xFF16A085),
+          unselectedItemColor: Colors.grey.shade600,
         ),
       ),
-
-      body: FutureBuilder<
-          Map<String,
-              List<dynamic>>>(
-        future:
-            fetchCommittees(),
-
-        builder:
-            (
-              context,
-              snapshot,
-            ) {
-          if (!snapshot
-              .hasData) {
-            return const Center(
-              child:
-                  CircularProgressIndicator(
-                color: Color(
-                  0xFF16A085,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0A0A0E),
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          centerTitle: true,
+          elevation: 0,
+          title: const Text(
+            "ROBO CELL HERITAGE",
+            style: TextStyle(
+              color: Color(0xFFE5DDC8),
+              fontWeight: FontWeight.w900,
+              letterSpacing: 5,
+              fontSize: 22,
+            ),
+          ),
+        ),
+        body: FutureBuilder<List<Map<String, dynamic>>>(
+          future: _hierarchyFuture, // Utilizing our initialized future instance
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const Center(
+                child: Text(
+                  'Error loading hierarchy',
+                  style: TextStyle(color: Colors.white70),
                 ),
+              );
+            }
+
+            if (!snapshot.hasData) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF16A085),
+                ),
+              );
+            }
+
+            final groupedData = groupMembersByCommittee(snapshot.data!);
+
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
+              itemCount: groupedData.keys.length,
+              itemBuilder: (context, index) {
+                final String committeeName = groupedData.keys.elementAt(index);
+                final List<Map<String, dynamic>> members = groupedData[committeeName]!;
+                final Color accentColor = committeeColor(committeeName);
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 60),
+                  child: Column(
+                    children: [
+                      Text(
+                        committeeName.toUpperCase(),
+                        style: TextStyle(
+                          color: accentColor,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 19,
+                          letterSpacing: 6,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: 50,
+                        height: 3.5,
+                        decoration: BoxDecoration(
+                          color: accentColor,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(height: 36),
+                      ...buildGeometricLayout(members, accentColor),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  List<Widget> buildGeometricLayout(
+    List<Map<String, dynamic>> members,
+    Color color,
+  ) {
+    final bool isOdd = members.length % 2 != 0;
+    final List<Map<String, dynamic>> gridItems = isOdd ? members.sublist(1) : members;
+
+    return [
+      if (isOdd)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Center(
+            child: SizedBox(
+              width: 165,
+              height: 255,
+              child: buildCard(members[0], color),
+            ),
+          ),
+        ),
+      if (gridItems.isNotEmpty)
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: gridItems.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 24,
+            crossAxisSpacing: 20,
+            childAspectRatio: 165 / 255,
+          ),
+          itemBuilder: (context, gridIndex) {
+            return Center(
+              child: SizedBox(
+                width: 165,
+                height: 255,
+                child: buildCard(gridItems[gridIndex], color),
               ),
             );
-          }
+          },
+        ),
+    ];
+  }
 
-          final committees =
-              snapshot.data!;
+  Widget buildCard(Map<String, dynamic> member, Color color) {
+    final int memberId = member['id'] is int ? member['id'] : member['id'].hashCode;
 
-          return ListView.builder(
-            padding:
-                const EdgeInsets.all(
-              18,
-            ),
-
-            itemCount:
-                committeeOrder.length,
-
-            itemBuilder:
-                (
-                  context,
-                  index,
-                ) {
-              final committee =
-                  committeeOrder[
-                      index];
-
-              final members =
-                  committees[
-                      committee]!;
-
-              if (members
-                  .isEmpty) {
-                return const SizedBox();
-              }
-
-              final color =
-                  committeeColor(
-                committee,
-              );
-
-              return Padding(
-                padding:
-                    const EdgeInsets.only(
-                  bottom: 45,
-                ),
-
-                child: Column(
-                  children: [
-                    Text(
-                      committee
-                          .toUpperCase(),
-
-                      style:
-                          TextStyle(
-                        color: color,
-                        fontWeight:
-                            FontWeight
-                                .bold,
-                        fontSize: 16,
-                        letterSpacing:
-                            3,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-
-                    Container(
-                      width: 90,
-                      height: 2,
-                      color: color,
-                    ),
-
-                    const SizedBox(
-                      height: 30,
-                    ),
-
-                    Wrap(
-                      alignment:
-                          WrapAlignment
-                              .center,
-
-                      spacing: 16,
-
-                      runSpacing: 16,
-
-                      children:
-                          members.map(
-                        (member) {
-                          return SizedBox(
-                            width: 170,
-                            height: 280,
-
-                            child:
-                                MemberCard(
-                              member:
-                                  member,
-
-                              color:
-                                  color,
-
-                              isFlipped:
-                                  flippedCard ==
-                                      member[
-                                          'id'],
-
-                              onTap:
-                                  () {
-                                setState(
-                                  () {
-                                    if (flippedCard ==
-                                        member[
-                                            'id']) {
-                                      flippedCard =
-                                          null;
-                                    } else {
-                                      flippedCard =
-                                          member[
-                                              'id'];
-                                    }
-                                  },
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ).toList(),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-      ),
+    return MemberCard(
+      member: member,
+      color: color,
+      isFlipped: flippedCardId == memberId,
+      onTap: () {
+        setState(() {
+          flippedCardId = (flippedCardId == memberId) ? null : memberId;
+        });
+      },
     );
   }
 }
 
-class MemberCard
-    extends StatefulWidget {
-  final dynamic member;
-
+class MemberCard extends StatefulWidget {
+  final Map<String, dynamic> member;
   final bool isFlipped;
-
   final VoidCallback onTap;
-
   final Color color;
 
   const MemberCard({
@@ -407,54 +247,29 @@ class MemberCard
   });
 
   @override
-  State<MemberCard> createState() =>
-      _MemberCardState();
+  State<MemberCard> createState() => _MemberCardState();
 }
 
-class _MemberCardState
-    extends State<MemberCard>
-    with
-        SingleTickerProviderStateMixin {
-  late AnimationController
-      controller;
-
-  late Animation<double>
-      animation;
+class _MemberCardState extends State<MemberCard> with SingleTickerProviderStateMixin {
+  late AnimationController controller;
+  late Animation<double> animation;
 
   @override
   void initState() {
     super.initState();
-
-    controller =
-        AnimationController(
+    controller = AnimationController(
       vsync: this,
-      duration:
-          const Duration(
-        milliseconds: 500,
-      ),
+      duration: const Duration(milliseconds: 380),
     );
 
-    animation =
-        Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(
-      CurvedAnimation(
-        parent: controller,
-        curve:
-            Curves.easeInOut,
-      ),
+    animation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic),
     );
   }
 
   @override
-  void didUpdateWidget(
-    covariant MemberCard oldWidget,
-  ) {
-    super.didUpdateWidget(
-      oldWidget,
-    );
-
+  void didUpdateWidget(covariant MemberCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
     if (widget.isFlipped) {
       controller.forward();
     } else {
@@ -468,458 +283,259 @@ class _MemberCardState
     super.dispose();
   }
 
-  Future<void>
-      openLinkedin() async {
-    String url =
-        widget.member[
-            'linkedin'] ??
-            '';
+  Future<void> openLinkedin() async {
+    HapticFeedback.lightImpact();
+    String url = (widget.member['linkedin'] ?? '').toString().trim();
 
-    if (url.isEmpty) return;
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF161622),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          content: Row(
+            children: [
+              const Icon(Icons.info_outline_rounded, color: Colors.orangeAccent),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  "${widget.member['name']} HAS NOT ADDED A LINKEDIN PROFILE",
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
 
-    if (!url.startsWith(
-      'http',
-    )) {
+    if (!url.startsWith('http')) {
       url = 'https://$url';
     }
 
-    final uri =
-        Uri.parse(url);
+    final Uri uri = Uri.parse(url);
 
-    if (await canLaunchUrl(
-      uri,
-    )) {
-      await launchUrl(
-        uri,
-        mode: LaunchMode
-            .externalApplication,
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      if (!launched) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text("FAILED TO OPEN LINKEDIN"),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final image =
-        widget.member[
-                'photo_url'] ??
-            '';
+    final image = widget.member['photo_url'] ?? '';
+    final role = widget.member['role'] ?? 'MEMBER';
+    final name = widget.member['name'] ?? '';
+    final usn = widget.member['usn'] ?? 'FACULTY';
 
-    final role =
-        widget.member[
-                'role'] ??
-            '';
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final angle = animation.value * 3.1415926535;
+        final isFront = angle < (3.1415926535 / 2);
 
-    final name =
-        widget.member[
-                'name'] ??
-            '';
-
-    final usn =
-        widget.member[
-                'usn'] ??
-            'FACULTY';
-
-    final email =
-        widget.member[
-                'email'] ??
-            '';
-
-    return GestureDetector(
-      onTap: widget.onTap,
-      onDoubleTap:
-          openLinkedin,
-
-      child:
-          AnimatedBuilder(
-        animation:
-            animation,
-
-        builder:
-            (
-              context,
-              child,
-            ) {
-          final angle =
-              animation.value *
-                  3.1416;
-
-          return Transform(
-            alignment:
-                Alignment.center,
-
-            transform:
-                Matrix4.identity()
-                  ..setEntry(
-                    3,
-                    2,
-                    0.001,
-                  )
-                  ..rotateY(
-                    angle,
+        // Single external detector wraps the entire matrix structure cleanly
+        return GestureDetector(
+          onTap: widget.onTap,
+          onDoubleTap: () {
+            if (!isFront) {
+              openLinkedin(); // Directly launch LinkedIn if showing the card back
+            }
+          },
+          child: Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.0015)
+              ..rotateY(angle),
+            child: isFront
+                ? frontCard(image, name, role)
+                : Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.identity()..rotateY(3.1415926535),
+                    child: backCard(name, role, usn),
                   ),
-
-            child:
-                animation.value <
-                        0.5
-                    ? frontCard(
-                        image,
-                        name,
-                        role,
-                      )
-                    : Transform(
-                        alignment:
-                            Alignment
-                                .center,
-
-                        transform:
-                            Matrix4
-                                .identity()
-                              ..rotateY(
-                                3.1416,
-                              ),
-
-                        child:
-                            backCard(
-                          name,
-                          role,
-                          usn,
-                          email,
-                        ),
-                      ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget frontCard(
-    String image,
-    String name,
-    String role,
-  ) {
+  Widget frontCard(String image, String name, String role) {
     return Container(
-      decoration:
-          BoxDecoration(
-        color:
-            Colors.white
-                .withOpacity(
-          0.03,
-        ),
-
-        borderRadius:
-            BorderRadius.circular(
-          28,
-        ),
-
-        border: Border.all(
-          color:
-              widget.color,
-          width: 1.5,
-        ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF13131A),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: widget.color.withOpacity(0.2), width: 1.5),
       ),
-
-      child: Column(
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(
-                top:
-                    Radius.circular(
-                  28,
-                ),
-              ),
-
-              child: image
-                      .isNotEmpty
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: [
+            Expanded(
+              flex: 66,
+              child: image.toString().isNotEmpty
                   ? Image.network(
                       image,
-                      width: double
-                          .infinity,
-                      fit:
-                          BoxFit.cover,
-
-                      errorBuilder:
-                          (
-                            context,
-                            error,
-                            stackTrace,
-                          ) {
-                        return fallbackAvatar();
-                      },
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (c, e, s) => fallbackAvatar(),
                     )
                   : fallbackAvatar(),
             ),
-          ),
-
-          Padding(
-            padding:
-                const EdgeInsets.all(
-              12,
+            Expanded(
+              flex: 34,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                width: double.infinity,
+                color: const Color(0xFF1A1A24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Text(
+                      name.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: widget.color.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        role.replaceAll('_', ' ').toUpperCase(),
+                        style: TextStyle(
+                          color: widget.color,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 8.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-
-            child: Column(
-              children: [
-                Text(
-                  name
-                      .toUpperCase(),
-
-                  textAlign:
-                      TextAlign.center,
-
-                  maxLines: 2,
-
-                  overflow:
-                      TextOverflow
-                          .ellipsis,
-
-                  style:
-                      const TextStyle(
-                    color:
-                        Colors.white,
-                    fontWeight:
-                        FontWeight
-                            .bold,
-                    fontSize: 12,
-                    letterSpacing:
-                        1,
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 10,
-                ),
-
-                Container(
-                  width:
-                      double.infinity,
-
-                  padding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 10,
-                  ),
-
-                  decoration:
-                      BoxDecoration(
-                    color:
-                        widget.color
-                            .withOpacity(
-                      0.2,
-                    ),
-
-                    borderRadius:
-                        BorderRadius.circular(
-                      30,
-                    ),
-                  ),
-
-                  child: Text(
-                    role
-                        .replaceAll(
-                          '_',
-                          ' ',
-                        )
-                        .toUpperCase(),
-
-                    textAlign:
-                        TextAlign.center,
-
-                    style:
-                        TextStyle(
-                      color:
-                          widget.color,
-                      fontWeight:
-                          FontWeight
-                              .bold,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget fallbackAvatar() {
     return Container(
-      color:
-          Colors.grey.shade900,
-
-      child: const Center(
-        child: CircleAvatar(
-          radius: 45,
-
-          backgroundColor:
-              Color(
-            0xFF1E1E1E,
-          ),
-
-          child: Icon(
-            Icons.person,
-            size: 50,
-            color:
-                Colors.white54,
-          ),
+      width: double.infinity,
+      color: const Color(0xFF1A1A22),
+      child: Center(
+        child: Icon(
+          Icons.blur_on_rounded,
+          size: 46,
+          color: widget.color.withOpacity(0.25),
         ),
       ),
     );
   }
 
-  Widget backCard(
-    String name,
-    String role,
-    String usn,
-    String email,
-  ) {
+  Widget backCard(String name, String role, String usn) {
     return Container(
-      decoration:
-          BoxDecoration(
-        gradient:
-            LinearGradient(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            widget.color
-                .withOpacity(
-              0.25,
-            ),
-            Colors.black,
+            widget.color.withOpacity(0.1),
+            const Color(0xFF111116),
           ],
         ),
-
-        borderRadius:
-            BorderRadius.circular(
-          28,
-        ),
-
-        border: Border.all(
-          color:
-              widget.color,
-        ),
+        borderRadius: BorderRadius.circular(18),
       ),
-
-      child: Padding(
-        padding:
-            const EdgeInsets.all(
-          16,
-        ),
-
-        child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment
-                  .center,
-
-          children: [
-            Icon(
-              Icons.person,
-              color:
-                  widget.color,
-              size: 44,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 6),
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: widget.color.withOpacity(0.08),
+            child: Icon(
+              Icons.bolt_rounded,
+              color: widget.color,
+              size: 20,
             ),
-
-            const SizedBox(
-              height: 18,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            name.toUpperCase(),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
             ),
-
-            Text(
-              name.toUpperCase(),
-
-              textAlign:
-                  TextAlign.center,
-
-              style:
-                  const TextStyle(
-                color:
-                    Colors.white,
-                fontWeight:
-                    FontWeight.bold,
-                fontSize: 15,
-              ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            role.replaceAll('_', ' ').toUpperCase(),
+            style: TextStyle(
+              color: widget.color,
+              fontWeight: FontWeight.w700,
+              fontSize: 8.5,
             ),
-
-            const SizedBox(
-              height: 10,
+          ),
+          const Spacer(),
+          Text(
+            usn,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 10,
             ),
-
-            Text(
-              role
-                  .replaceAll(
-                    '_',
-                    ' ',
-                  )
-                  .toUpperCase(),
-
-              textAlign:
-                  TextAlign.center,
-
-              style: TextStyle(
-                color:
-                    widget.color,
-                fontWeight:
-                    FontWeight.bold,
-                fontSize: 11,
-              ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(5),
             ),
-
-            const SizedBox(
-              height: 12,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.touch_app_outlined,
+                  size: 10,
+                  color: widget.color.withOpacity(0.7),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  "DOUBLE TAP FOR LINKEDIN",
+                  style: TextStyle(
+                    color: widget.color.withOpacity(0.7),
+                    fontSize: 7,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             ),
-
-            Text(
-              usn.toUpperCase(),
-
-              style:
-                  const TextStyle(
-                color:
-                    Colors.white70,
-                fontSize: 11,
-              ),
-            ),
-
-            const SizedBox(
-              height: 8,
-            ),
-
-            Text(
-              email.toUpperCase(),
-
-              textAlign:
-                  TextAlign.center,
-
-              maxLines: 2,
-
-              overflow:
-                  TextOverflow
-                      .ellipsis,
-
-              style:
-                  const TextStyle(
-                color:
-                    Colors.grey,
-                fontSize: 10,
-              ),
-            ),
-
-            const Spacer(),
-
-            Text(
-              "DOUBLE TAP FOR LINKEDIN",
-
-              textAlign:
-                  TextAlign.center,
-
-              style: TextStyle(
-                color:
-                    widget.color,
-                fontSize: 8,
-                letterSpacing:
-                    1,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

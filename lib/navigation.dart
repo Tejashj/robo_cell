@@ -34,7 +34,7 @@ class _MainNavigationState
     pages = [
 
       HomeContent(
-        user: widget.user,
+        user: widget.user, onNavigateToMeetings: () {  },
       ),
 
       FeedPage(

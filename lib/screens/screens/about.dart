@@ -21,8 +21,7 @@ class AboutRoboCellPage extends StatelessWidget {
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: 'robocellbit@gmail.com',
-      query:
-          'subject=Hello Robo Cell&body=Greetings from Robo Cell App.',
+      query: 'subject=Hello Robo Cell&body=Greetings from Robo Cell App.',
     );
 
     await launchUrl(emailUri);
@@ -35,58 +34,39 @@ class AboutRoboCellPage extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     return InkWell(
-      borderRadius:
-          BorderRadius.circular(
+      borderRadius: BorderRadius.circular(
         26,
       ),
-
       onTap: onTap,
-
       child: Container(
-        margin:
-            const EdgeInsets.only(
+        margin: const EdgeInsets.only(
           bottom: 18,
         ),
-
-        padding:
-            const EdgeInsets.all(
+        padding: const EdgeInsets.all(
           20,
         ),
-
-        decoration:
-            BoxDecoration(
-          gradient:
-              LinearGradient(
-            begin:
-                Alignment.topLeft,
-            end:
-                Alignment.bottomRight,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Colors.white
-                  .withOpacity(
+              Colors.white.withOpacity(
                 0.06,
               ),
-              Colors.white
-                  .withOpacity(
+              Colors.white.withOpacity(
                 0.02,
               ),
             ],
           ),
-
-          borderRadius:
-              BorderRadius.circular(
+          borderRadius: BorderRadius.circular(
             26,
           ),
-
           border: Border.all(
-            color:
-                Colors.white10,
+            color: Colors.white10,
           ),
-
           boxShadow: [
             BoxShadow(
-              color:
-                  const Color(
+              color: const Color(
                 0xFF16A085,
               ).withOpacity(
                 0.08,
@@ -96,103 +76,71 @@ class AboutRoboCellPage extends StatelessWidget {
             ),
           ],
         ),
-
         child: Row(
           children: [
             Container(
               height: 58,
               width: 58,
-
-              decoration:
-                  BoxDecoration(
-                gradient:
-                    LinearGradient(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
                   colors: [
                     const Color(
                       0xFF16A085,
                     ).withOpacity(
                       0.9,
                     ),
-
                     const Color(
                       0xFF0E6655,
                     ),
                   ],
                 ),
-
-                borderRadius:
-                    BorderRadius.circular(
+                borderRadius: BorderRadius.circular(
                   18,
                 ),
               ),
-
               child: Icon(
                 icon,
-                color:
-                    Colors.black,
+                color: Colors.black,
                 size: 28,
               ),
             ),
-
             const SizedBox(
               width: 18,
             ),
-
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-
-                    style:
-                        const TextStyle(
-                      color:
-                          Colors.grey,
-
+                    style: const TextStyle(
+                      color: Colors.grey,
                       fontSize: 11,
-
-                      letterSpacing:
-                          2,
-
-                      fontWeight:
-                          FontWeight.w600,
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   const SizedBox(
                     height: 8,
                   ),
-
                   Text(
                     value,
-
-                    style:
-                        const TextStyle(
+                    style: const TextStyle(
                       color: Color(
                         0xFFEAE2C6,
                       ),
-
-                      fontWeight:
-                          FontWeight.bold,
-
+                      fontWeight: FontWeight.bold,
                       fontSize: 14,
-
                       height: 1.4,
                     ),
                   ),
                 ],
               ),
             ),
-
             if (onTap != null)
               const Icon(
                 Icons.arrow_forward_ios,
-                color:
-                    Colors.white38,
+                color: Colors.white38,
                 size: 16,
               ),
           ],
@@ -207,40 +155,28 @@ class AboutRoboCellPage extends StatelessWidget {
     required String url,
   }) {
     return InkWell(
-      borderRadius:
-          BorderRadius.circular(
+      borderRadius: BorderRadius.circular(
         20,
       ),
-
       onTap: () {
         openLink(url);
       },
-
       child: Container(
         height: 70,
         width: 70,
-
-        decoration:
-            BoxDecoration(
-          color: Colors.white
-              .withOpacity(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(
             0.03,
           ),
-
-          borderRadius:
-              BorderRadius.circular(
+          borderRadius: BorderRadius.circular(
             20,
           ),
-
           border: Border.all(
-            color:
-                Colors.white10,
+            color: Colors.white10,
           ),
-
           boxShadow: [
             BoxShadow(
-              color:
-                  iconColor.withOpacity(
+              color: iconColor.withOpacity(
                 0.18,
               ),
               blurRadius: 20,
@@ -248,7 +184,6 @@ class AboutRoboCellPage extends StatelessWidget {
             ),
           ],
         ),
-
         child: Center(
           child: Icon(
             icon,
@@ -263,35 +198,25 @@ class AboutRoboCellPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          const Color(
+      backgroundColor: const Color(
         0xFF050505,
       ),
-
       body: Container(
-        decoration:
-            const BoxDecoration(
-          gradient:
-              LinearGradient(
-            begin:
-                Alignment.topCenter,
-            end:
-                Alignment.bottomCenter,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
               Color(0xFF0A0A0A),
               Color(0xFF000000),
             ],
           ),
         ),
-
         child: SafeArea(
-          child:
-              SingleChildScrollView(
-            padding:
-                const EdgeInsets.all(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(
               22,
             ),
-
             child: Column(
               children: [
                 const SizedBox(
@@ -300,49 +225,33 @@ class AboutRoboCellPage extends StatelessWidget {
 
                 /// LOGO
                 Container(
-                  padding:
-                      const EdgeInsets.all(
+                  padding: const EdgeInsets.all(
                     24,
                   ),
-
-                  decoration:
-                      BoxDecoration(
-                    gradient:
-                        LinearGradient(
-                      begin:
-                          Alignment
-                              .topLeft,
-                      end:
-                          Alignment
-                              .bottomRight,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                       colors: [
                         const Color(
                           0xFF16A085,
                         ).withOpacity(
                           0.18,
                         ),
-
-                        Colors.white
-                            .withOpacity(
+                        Colors.white.withOpacity(
                           0.03,
                         ),
                       ],
                     ),
-
-                    borderRadius:
-                        BorderRadius.circular(
+                    borderRadius: BorderRadius.circular(
                       34,
                     ),
-
                     border: Border.all(
-                      color:
-                          Colors.white10,
+                      color: Colors.white10,
                     ),
-
                     boxShadow: [
                       BoxShadow(
-                        color:
-                            const Color(
+                        color: const Color(
                           0xFF16A085,
                         ).withOpacity(
                           0.15,
@@ -352,16 +261,12 @@ class AboutRoboCellPage extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   child: ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(
+                    borderRadius: BorderRadius.circular(
                       26,
                     ),
-
                     child: Image.asset(
                       'assets/rcell.jpg',
-
                       height: 130,
                       width: 130,
                       fit: BoxFit.cover,
@@ -374,14 +279,12 @@ class AboutRoboCellPage extends StatelessWidget {
                 ),
 
                 ShaderMask(
-                  shaderCallback:
-                      (bounds) {
+                  shaderCallback: (bounds) {
                     return const LinearGradient(
                       colors: [
                         Color(
                           0xFFEAE2C6,
                         ),
-
                         Color(
                           0xFF16A085,
                         ),
@@ -390,19 +293,12 @@ class AboutRoboCellPage extends StatelessWidget {
                       bounds,
                     );
                   },
-
                   child: const Text(
                     "ROBO CELL",
-
                     style: TextStyle(
-                      color:
-                          Colors.white,
-
+                      color: Colors.white,
                       fontSize: 38,
-
-                      fontWeight:
-                          FontWeight.w900,
-
+                      fontWeight: FontWeight.w900,
                       letterSpacing: 4,
                     ),
                   ),
@@ -414,18 +310,11 @@ class AboutRoboCellPage extends StatelessWidget {
 
                 const Text(
                   "DEPARTMENT OF ROBOTICS &\nARTIFICIAL INTELLIGENCE",
-
-                  textAlign:
-                      TextAlign.center,
-
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color:
-                        Colors.white70,
-
+                    color: Colors.white70,
                     fontSize: 14,
-
                     letterSpacing: 2,
-
                     height: 1.6,
                   ),
                 ),
@@ -436,85 +325,54 @@ class AboutRoboCellPage extends StatelessWidget {
 
                 /// ABOUT
                 Container(
-                  width:
-                      double.infinity,
-
-                  padding:
-                      const EdgeInsets.all(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(
                     28,
                   ),
-
-                  decoration:
-                      BoxDecoration(
-                    gradient:
-                        LinearGradient(
-                      begin:
-                          Alignment
-                              .topLeft,
-                      end:
-                          Alignment
-                              .bottomRight,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                       colors: [
                         const Color(
                           0xFF16A085,
                         ).withOpacity(
                           0.18,
                         ),
-
-                        Colors.white
-                            .withOpacity(
+                        Colors.white.withOpacity(
                           0.02,
                         ),
                       ],
                     ),
-
-                    borderRadius:
-                        BorderRadius.circular(
+                    borderRadius: BorderRadius.circular(
                       30,
                     ),
-
                     border: Border.all(
-                      color:
-                          Colors.white10,
+                      color: Colors.white10,
                     ),
                   ),
-
                   child: const Column(
                     children: [
                       Text(
                         "ABOUT ROBO CELL",
-
                         style: TextStyle(
                           color: Color(
                             0xFF16A085,
                           ),
-
-                          fontWeight:
-                              FontWeight.bold,
-
-                          letterSpacing:
-                              3,
-
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 3,
                           fontSize: 15,
                         ),
                       ),
-
                       SizedBox(
                         height: 22,
                       ),
-
                       Text(
                         "Robo Cell is the premier club under the Department of Robotics & Artificial Intelligence (RAI) at the Bangalore Institute of Technology. The club bridges academic learning with cutting-edge innovation through workshops, hackathons, research initiatives, industrial collaborations, and real-world engineering projects.",
-
-                        textAlign:
-                            TextAlign.center,
-
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                          color:
-                              Colors.white70,
-
+                          color: Colors.white70,
                           height: 1.8,
-
                           fontSize: 13.5,
                         ),
                       ),
@@ -528,15 +386,10 @@ class AboutRoboCellPage extends StatelessWidget {
 
                 /// LOCATION
                 infoTile(
-                  icon:
-                      Icons.location_on_rounded,
-
-                  title:
-                      "LOCATION",
-
+                  icon: Icons.location_on_rounded,
+                  title: "LOCATION",
                   value:
                       "Bangalore Institute of Technology, Krishna Rajendra Rd, Bengaluru",
-
                   onTap: () {
                     openLink(
                       "https://maps.google.com/?q=Bangalore+Institute+of+Technology+Krishna+Rajendra+Road+Bengaluru",
@@ -546,15 +399,9 @@ class AboutRoboCellPage extends StatelessWidget {
 
                 /// DEPARTMENT
                 infoTile(
-                  icon:
-                      Icons.memory_rounded,
-
-                  title:
-                      "DEPARTMENT",
-
-                  value:
-                      "Robotics & Artificial Intelligence",
-
+                  icon: Icons.memory_rounded,
+                  title: "DEPARTMENT",
+                  value: "Robotics & Artificial Intelligence",
                   onTap: () {
                     openLink(
                       "https://bit-bangalore.edu.in/robotics-about",
@@ -564,15 +411,9 @@ class AboutRoboCellPage extends StatelessWidget {
 
                 /// EMAIL
                 infoTile(
-                  icon:
-                      Icons.email_rounded,
-
-                  title:
-                      "OFFICIAL EMAIL",
-
-                  value:
-                      "robocellbit@gmail.com",
-
+                  icon: Icons.email_rounded,
+                  title: "OFFICIAL EMAIL",
+                  value: "robocellbit@gmail.com",
                   onTap: () {
                     openMail();
                   },
@@ -584,106 +425,65 @@ class AboutRoboCellPage extends StatelessWidget {
 
                 /// SOCIALS
                 Container(
-                  width:
-                      double.infinity,
-
-                  padding:
-                      const EdgeInsets.symmetric(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
                     vertical: 28,
                     horizontal: 24,
                   ),
-
-                  decoration:
-                      BoxDecoration(
-                    gradient:
-                        LinearGradient(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
                       colors: [
-                        Colors.white
-                            .withOpacity(
+                        Colors.white.withOpacity(
                           0.05,
                         ),
-
-                        Colors.white
-                            .withOpacity(
+                        Colors.white.withOpacity(
                           0.02,
                         ),
                       ],
                     ),
-
-                    borderRadius:
-                        BorderRadius.circular(
+                    borderRadius: BorderRadius.circular(
                       30,
                     ),
-
                     border: Border.all(
-                      color:
-                          Colors.white10,
+                      color: Colors.white10,
                     ),
                   ),
-
                   child: Column(
                     children: [
                       const Text(
                         "FOLLOW ROBO CELL",
-
                         style: TextStyle(
                           color: Color(
                             0xFF16A085,
                           ),
-
-                          fontWeight:
-                              FontWeight.bold,
-
-                          letterSpacing:
-                              3,
-
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 3,
                           fontSize: 15,
                         ),
                       ),
-
                       const SizedBox(
                         height: 30,
                       ),
-
                       Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment
-                                .spaceEvenly,
-
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           socialButton(
-                            icon:
-                                Icons.close,
-
-                            iconColor:
-                                Colors.white,
-
-                            url:
-                                "https://x.com/bitrobocell",
+                            icon: Icons.close,
+                            iconColor: Colors.white,
+                            url: "https://x.com/bitrobocell",
                           ),
-
                           socialButton(
-                            icon:
-                                Icons.camera_alt_rounded,
-
-                            iconColor:
-                                const Color(
+                            icon: Icons.camera_alt_rounded,
+                            iconColor: const Color(
                               0xFFE1306C,
                             ),
-
-                            url:
-                                "https://www.instagram.com/robo.cell.bit/",
+                            url: "https://www.instagram.com/robo.cell.bit/",
                           ),
-
                           socialButton(
-                            icon:
-                                Icons.work,
-
-                            iconColor:
-                                const Color(
+                            icon: Icons.work,
+                            iconColor: const Color(
                               0xFF0077B5,
                             ),
-
                             url:
                                 "https://www.linkedin.com/in/robo-cell-bit-256975365/",
                           ),
@@ -699,42 +499,28 @@ class AboutRoboCellPage extends StatelessWidget {
 
                 /// BUTTON
                 SizedBox(
-                  width:
-                      double.infinity,
-
+                  width: double.infinity,
                   height: 60,
-
-                  child:
-                      ElevatedButton.icon(
-                    style:
-                        ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(
                         0xFF16A085,
                       ),
-
                       elevation: 12,
-
-                      shadowColor:
-                          const Color(
+                      shadowColor: const Color(
                         0xFF16A085,
                       ).withOpacity(
                         0.4,
                       ),
-
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
                           22,
                         ),
                       ),
                     ),
-
                     onPressed: () {
                       Navigator.push(
                         context,
-
                         MaterialPageRoute(
                           builder: (_) {
                             return const CommitteesPage();
@@ -742,27 +528,16 @@ class AboutRoboCellPage extends StatelessWidget {
                         ),
                       );
                     },
-
                     icon: const Icon(
                       Icons.groups_rounded,
-
-                      color:
-                          Colors.black,
+                      color: Colors.black,
                     ),
-
                     label: const Text(
                       "VIEW COMMITTEES",
-
                       style: TextStyle(
-                        color:
-                            Colors.black,
-
-                        fontWeight:
-                            FontWeight.w900,
-
-                        letterSpacing:
-                            1.5,
-
+                        color: Colors.black,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
                         fontSize: 14,
                       ),
                     ),
@@ -775,16 +550,12 @@ class AboutRoboCellPage extends StatelessWidget {
 
                 /// FOOTER
                 const Text(
-                  "DESIGNED & DEVELOPED BY",
-
+                  "BUILT WITH ❤️ BY",
                   style: TextStyle(
-                    color:
-                        Colors.grey,
-
-                    letterSpacing:
-                        2,
-
+                    color: Colors.grey,
+                    letterSpacing: 2,
                     fontSize: 10,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
 
@@ -794,18 +565,12 @@ class AboutRoboCellPage extends StatelessWidget {
 
                 const Text(
                   "TECH TRYANUKA",
-
                   style: TextStyle(
                     color: Color(
                       0xFF16A085,
                     ),
-
-                    fontWeight:
-                        FontWeight.bold,
-
-                    letterSpacing:
-                        4,
-
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4,
                     fontSize: 17,
                   ),
                 ),

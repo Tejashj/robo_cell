@@ -36,6 +36,7 @@ dependencies:
 
   # SHARE FILES
   share_plus: ^9.0.0
+  font_awesome_flutter: ^11.0.0
 
 dev_dependencies:
   flutter_test:
