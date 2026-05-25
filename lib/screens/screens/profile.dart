@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../widgets/skeleton_loader.dart';
 import 'login.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -359,54 +362,27 @@ class _ProfilePageState
                                       .toString()
                                       .isNotEmpty
 
-                              ? Image.network(
+                              ? CachedNetworkImage(
 
-                                  photo,
+                                  imageUrl: photo,
 
                                   width: 112,
 
                                   height: 112,
 
-                                  fit: BoxFit.cover,
+                                  fit:
+                                      BoxFit.cover,
 
-                                  loadingBuilder:
+                                  placeholder: (context, url) => const SkeletonCircle(radius: 56),
+                                  errorWidget:
                                       (
                                         context,
-                                        child,
-                                        progress,
-                                      ) {
-
-                                    if (progress ==
-                                        null) {
-
-                                      return child;
-                                    }
-
-                                    return const Center(
-
-                                      child:
-                                          CircularProgressIndicator(
-                                        color:
-                                            Color(
-                                          0xFF16A085,
-                                        ),
-                                      ),
-                                    );
-                                  },
-
-                                  errorBuilder:
-                                      (
-                                        context,
+                                        url,
                                         error,
-                                        stackTrace,
                                       ) {
-
                                     return const Icon(
-
                                       Icons.person,
-
                                       size: 55,
-
                                       color:
                                           Color(
                                         0xFF16A085,
@@ -746,6 +722,8 @@ class _ProfilePageState
                 ),
 
                 onPressed: () {
+
+                  Hive.box('robo_cache').delete('logged_in_user');
 
                   Navigator.pushAndRemoveUntil(
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/app_provider.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class FeedPage extends StatefulWidget {
 
@@ -326,7 +328,7 @@ class _FeedPageState
                   backgroundImage:
                       photo != null &&
                               photo != ''
-                          ? NetworkImage(
+                          ? CachedNetworkImageProvider(
                               photo,
                             )
                           : null,
@@ -515,16 +517,7 @@ class _FeedPageState
       body:
           loading
 
-              ? const Center(
-
-                  child:
-                      CircularProgressIndicator(
-                    color:
-                        Color(
-                      0xFF16A085,
-                    ),
-                  ),
-                )
+              ? _buildFeedSkeleton()
 
               : RefreshIndicator(
 
@@ -723,6 +716,51 @@ class _FeedPageState
                     ),
                   ),
                 ),
+    );
+  }
+
+  Widget _buildFeedSkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white.withOpacity(0.04)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const SkeletonCircle(radius: 18),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SkeletonBox(width: 100, height: 12),
+                      const SizedBox(height: 6),
+                      const SkeletonBox(width: 60, height: 10),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const SkeletonBox(width: double.infinity, height: 14),
+              const SizedBox(height: 8),
+              const SkeletonBox(width: double.infinity, height: 14),
+              const SizedBox(height: 8),
+              const SkeletonBox(width: 200, height: 14),
+              const SizedBox(height: 16),
+              const SkeletonBox(width: double.infinity, height: 200, borderRadius: 16),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -1,6 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import '../../navigation.dart';
 import 'login.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -162,6 +165,8 @@ class _SplashScreenState
 
         HapticFeedback.mediumImpact();
 
+        final cachedUser = Hive.box('robo_cache').get('logged_in_user');
+
         Navigator.pushReplacement(
 
           context,
@@ -188,7 +193,9 @@ class _SplashScreenState
                     animation,
 
                 child:
-                    const LoginScreen(),
+                    cachedUser != null
+                        ? MainNavigation(user: Map<String, dynamic>.from(cachedUser))
+                        : const LoginScreen(),
               );
             },
 

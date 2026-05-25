@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/app_provider.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class CommitteesPage extends StatefulWidget {
   const CommitteesPage({super.key});
@@ -350,11 +352,12 @@ class _MemberCardState extends State<MemberCard> with SingleTickerProviderStateM
             Expanded(
               flex: 66,
               child: image.toString().isNotEmpty
-                  ? Image.network(
-                      image,
+                  ? CachedNetworkImage(
+                      imageUrl: image,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => fallbackAvatar(),
+                      placeholder: (c, u) => const SkeletonBox(height: double.infinity, borderRadius: 16),
+                      errorWidget: (c, u, e) => fallbackAvatar(),
                     )
                   : fallbackAvatar(),
             ),

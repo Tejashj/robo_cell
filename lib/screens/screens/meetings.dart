@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class MeetingsPage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -520,7 +521,7 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
         body: Consumer<AppProvider>(
           builder: (context, provider, child) {
             if (provider.isLoadingMeetings && provider.meetings.isEmpty) {
-              return const Center(child: CircularProgressIndicator(color: kPrimaryTeal, strokeWidth: 2));
+              return _buildMeetingsSkeleton();
             }
             return TabBarView(
               controller: _tabController,
@@ -607,6 +608,48 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
                 ],
               ),
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMeetingsSkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: kSurfaceCard,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.02)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const SkeletonBox(width: 140, height: 20),
+                  const SkeletonBox(width: 60, height: 20, borderRadius: 6),
+                ],
+              ),
+              const SizedBox(height: 14),
+              const SkeletonBox(width: double.infinity, height: 14),
+              const SizedBox(height: 8),
+              const SkeletonBox(width: 200, height: 14),
+              const SizedBox(height: 18),
+              const Row(
+                children: [
+                  SkeletonBox(width: 80, height: 12),
+                  SizedBox(width: 16),
+                  SkeletonBox(width: 120, height: 12),
+                ],
+              )
+            ],
           ),
         );
       },

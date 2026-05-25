@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../navigation.dart';
 
@@ -213,6 +215,9 @@ class _LoginScreenState
 
               .single();
 
+      // Save session to local storage
+      Hive.box('robo_cache').put('logged_in_user', result);
+
       if (!mounted) return;
 
       Navigator.pushReplacement(
@@ -382,117 +387,132 @@ class _LoginScreenState
   /// ================= MEMBER DROPDOWN =================
 
   Widget buildMemberDropdown() {
-    return DropdownButtonFormField<
-        Map<String, dynamic>>(
-      isExpanded: true,
-
-      value: selectedMember,
-
-      dropdownColor:
-          const Color(
-        0xFF111111,
-      ),
-
-      style: const TextStyle(
-        color: Colors.white,
-      ),
-
-      iconEnabledColor:
-          const Color(
-        0xFF16A085,
-      ),
-
-      decoration: InputDecoration(
-        hintText:
-            "SELECT MEMBER",
-
-        hintStyle:
-            const TextStyle(
-          color: Colors.grey,
-        ),
-
-        filled: true,
-
-        fillColor:
-            Colors.white.withOpacity(
-          0.03,
-        ),
-
-        border:
-            OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(
-            20,
-          ),
-
-          borderSide:
-              BorderSide.none,
-        ),
-      ),
-
-      items:
-          members.map((m) {
-        final imageUrl =
-            getImageUrl(m);
-
-        return DropdownMenuItem(
-          value: m,
-
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-
-                backgroundColor:
-                    const Color(
-                  0xFF16A085,
-                ),
-
-                backgroundImage:
-                    imageUrl.isNotEmpty
-                        ? NetworkImage(
-                            imageUrl,
-                          )
-                        : null,
-
-                child:
-                    imageUrl.isEmpty
-                        ? const Icon(
-                            Icons.person,
-                            color:
-                                Colors.black,
-                          )
-                        : null,
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 350),
+      child: loading && selectedCommittee != null
+          ? Container(
+              key: const ValueKey("loading"),
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.03),
+                borderRadius: BorderRadius.circular(20),
               ),
-
-              const SizedBox(
-                width: 12,
-              ),
-
-              Expanded(
-                child: Text(
-                  m['name']
-                      .toString()
-                      .toUpperCase(),
-
-                  overflow:
-                      TextOverflow
-                          .ellipsis,
+              child: const Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF16A085),
+                    strokeWidth: 2,
+                  ),
                 ),
               ),
-            ],
-          ),
-        );
-      }).toList(),
-
-      onChanged: (value) {
-        HapticFeedback.selectionClick();
-
-        setState(() {
-          selectedMember =
-              value;
-        });
-      },
+            )
+          : DropdownButtonFormField<
+              Map<String, dynamic>>(
+              key: const ValueKey("loaded"),
+              isExpanded: true,
+      
+              value: selectedMember,
+      
+              dropdownColor:
+                  const Color(
+                0xFF111111,
+              ),
+      
+              style: const TextStyle(
+                color: Colors.white,
+              ),
+      
+              iconEnabledColor:
+                  const Color(
+                0xFF16A085,
+              ),
+      
+              decoration: InputDecoration(
+                hintText:
+                    "SELECT MEMBER",
+      
+                hintStyle:
+                    const TextStyle(
+                  color: Colors.grey,
+                ),
+      
+                filled: true,
+      
+                fillColor:
+                    Colors.white.withOpacity(
+                  0.03,
+                ),
+      
+                border:
+                    OutlineInputBorder(
+                  borderRadius:
+                      BorderRadius.circular(
+                    20,
+                  ),
+      
+                  borderSide:
+                      BorderSide.none,
+                ),
+              ),
+      
+              items:
+                  members.map((m) {
+                final imageUrl =
+                    getImageUrl(m);
+      
+                return DropdownMenuItem(
+                  value: m,
+      
+                  child: Row(
+                    children: [
+                      ClipOval(
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          color: const Color(0xFF16A085),
+                          child: imageUrl.isNotEmpty
+                              ? FadeInImage(
+                                  placeholder: const AssetImage('assets/rcell.jpg'),
+                                  image: CachedNetworkImageProvider(imageUrl),
+                                  fit: BoxFit.cover,
+                                  fadeInDuration: const Duration(milliseconds: 400),
+                                  imageErrorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: Colors.black, size: 20),
+                                )
+                              : const Icon(Icons.person, color: Colors.black, size: 20),
+                        ),
+                      ),
+      
+                      const SizedBox(
+                        width: 12,
+                      ),
+      
+                      Expanded(
+                        child: Text(
+                          m['name']
+                              .toString()
+                              .toUpperCase(),
+      
+                          overflow:
+                              TextOverflow
+                                  .ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+      
+              onChanged: (value) {
+                HapticFeedback.selectionClick();
+      
+                setState(() {
+                  selectedMember =
+                      value;
+                });
+              },
+            ),
     );
   }
 
@@ -644,38 +664,14 @@ class _LoginScreenState
                       child:
                           ClipOval(
                         child:
-                            Image.network(
-                          imageUrl,
-
-                          width:
-                              double.infinity,
-
-                          height:
-                              double.infinity,
-
-                          fit:
-                              BoxFit.cover,
-
-                          loadingBuilder:
-                              (
-                                context,
-                                child,
-                                progress,
-                              ) {
-                            if (progress ==
-                                null) {
-                              return child;
-                            }
-
-                            return Image.asset(
-                              'assets/rcell.jpg',
-
-                              fit:
-                                  BoxFit.cover,
-                            );
-                          },
-
-                          errorBuilder:
+                            FadeInImage(
+                          placeholder: const AssetImage('assets/rcell.jpg'),
+                          image: CachedNetworkImageProvider(imageUrl),
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          fadeInDuration: const Duration(milliseconds: 500),
+                          imageErrorBuilder:
                               (
                                 context,
                                 error,
@@ -752,8 +748,9 @@ class _LoginScreenState
         0xFF030303,
       ),
 
-      body: Stack(
-        children: [
+      body: SizedBox.expand(
+        child: Stack(
+          children: [
 
           Positioned(
             top: -150,
@@ -1163,6 +1160,7 @@ class _LoginScreenState
                       ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/app_provider.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class HomeContent extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -58,12 +60,7 @@ class _HomeContentState extends State<HomeContent> {
       child: Scaffold(
         backgroundColor: const Color(0xFF09090A),
         body: loading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Color(0xFF148F77),
-                ),
-              )
+            ? _buildHomeSkeleton()
             : RefreshIndicator(
                 color: const Color(0xFF148F77),
                 backgroundColor: const Color(0xFF121214),
@@ -95,7 +92,7 @@ class _HomeContentState extends State<HomeContent> {
                               child: CircleAvatar(
                                 radius: 28,
                                 backgroundColor: Colors.black,
-                                backgroundImage: photo != null && photo != '' ? NetworkImage(photo) : null,
+                                backgroundImage: photo != null && photo != '' ? CachedNetworkImageProvider(photo) : null,
                                 child: photo == null || photo == ''
                                     ? const Icon(Icons.person_rounded, color: Color(0xFF1ABC9C), size: 28)
                                     : null,
@@ -347,7 +344,7 @@ class _HomeContentState extends State<HomeContent> {
                                       radius: 14,
                                       backgroundColor: const Color(0xFF148F77),
                                       backgroundImage: creator['photo_url'] != null && creator['photo_url'] != ''
-                                          ? NetworkImage(creator['photo_url'])
+                                          ? CachedNetworkImageProvider(creator['photo_url'])
                                           : null,
                                       child: creator['photo_url'] == null || creator['photo_url'] == ''
                                           ? const Icon(Icons.person, size: 14, color: Colors.black)
@@ -382,6 +379,61 @@ class _HomeContentState extends State<HomeContent> {
                   ),
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildHomeSkeleton() {
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF121214),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withOpacity(0.03)),
+            ),
+            child: const Row(
+              children: [
+                SkeletonCircle(radius: 30),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SkeletonBox(width: 80, height: 10),
+                      SizedBox(height: 8),
+                      SkeletonBox(width: 160, height: 18),
+                      SizedBox(height: 10),
+                      SkeletonBox(width: 110, height: 12),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 38),
+          const SkeletonBox(width: 100, height: 14),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: SkeletonBox(height: 150, borderRadius: 20)),
+              const SizedBox(width: 14),
+              Expanded(child: SkeletonBox(height: 150, borderRadius: 20)),
+            ],
+          ),
+          const SizedBox(height: 38),
+          const SkeletonBox(width: 120, height: 14),
+          const SizedBox(height: 16),
+          ...List.generate(3, (_) => const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: SkeletonBox(height: 110, borderRadius: 20),
+          )),
+        ],
       ),
     );
   }
