@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../constants/app_icons.dart';
 import 'committees.dart';
 
 class AboutRoboCellPage extends StatelessWidget {
@@ -150,7 +152,7 @@ class AboutRoboCellPage extends StatelessWidget {
   }
 
   Widget socialButton({
-    required IconData icon,
+    required String svgPath,
     required Color iconColor,
     required String url,
   }) {
@@ -185,10 +187,11 @@ class AboutRoboCellPage extends StatelessWidget {
           ],
         ),
         child: Center(
-          child: Icon(
-            icon,
-            color: iconColor,
-            size: 34,
+          child: SvgPicture.asset(
+            svgPath,
+            width: 36,
+            height: 36,
+            fit: BoxFit.contain,
           ),
         ),
       ),
@@ -468,19 +471,19 @@ class AboutRoboCellPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           socialButton(
-                            icon: Icons.close,
+                            svgPath: AppIcons.x,
                             iconColor: Colors.white,
                             url: "https://x.com/bitrobocell",
                           ),
                           socialButton(
-                            icon: Icons.camera_alt_rounded,
+                            svgPath: AppIcons.instagram,
                             iconColor: const Color(
                               0xFFE1306C,
                             ),
                             url: "https://www.instagram.com/robo.cell.bit/",
                           ),
                           socialButton(
-                            icon: Icons.work,
+                            svgPath: AppIcons.linkedin,
                             iconColor: const Color(
                               0xFF0077B5,
                             ),
@@ -550,7 +553,7 @@ class AboutRoboCellPage extends StatelessWidget {
 
                 /// FOOTER
                 const Text(
-                  "BUILT WITH ❤️ BY",
+                  "DEVELOPED BY",
                   style: TextStyle(
                     color: Colors.grey,
                     letterSpacing: 2,
