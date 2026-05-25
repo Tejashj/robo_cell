@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../providers/app_provider.dart';
 import '../../widgets/skeleton_loader.dart';
+import 'meetings.dart';
 
 class HomeContent extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -71,7 +73,8 @@ class _HomeContentState extends State<HomeContent> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      /// USER METRIC HEADER ARCHITECTURE WITH UPDATED SALUTATION
+
+                      /// HEADER
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -86,15 +89,24 @@ class _HomeContentState extends State<HomeContent> {
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: LinearGradient(
-                                  colors: [Color(0xFF148F77), Color(0xFF1ABC9C)],
+                                  colors: [
+                                    Color(0xFF148F77),
+                                    Color(0xFF1ABC9C),
+                                  ],
                                 ),
                               ),
                               child: CircleAvatar(
                                 radius: 28,
                                 backgroundColor: Colors.black,
-                                backgroundImage: photo != null && photo != '' ? CachedNetworkImageProvider(photo) : null,
+                                backgroundImage: photo != null && photo != ''
+                                    ? CachedNetworkImageProvider(photo)
+                                    : null,
                                 child: photo == null || photo == ''
-                                    ? const Icon(Icons.person_rounded, color: Color(0xFF1ABC9C), size: 28)
+                                    ? const Icon(
+                                        Icons.person_rounded,
+                                        color: Color(0xFF1ABC9C),
+                                        size: 28,
+                                      )
                                     : null,
                               ),
                             ),
@@ -139,9 +151,10 @@ class _HomeContentState extends State<HomeContent> {
                           ],
                         ),
                       ),
+
                       const SizedBox(height: 28),
 
-                      /// LIVE OPERATIONS CAROUSEL SEGMENT
+                      /// MEETINGS HEADER
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -167,115 +180,233 @@ class _HomeContentState extends State<HomeContent> {
                               ),
                             ],
                           ),
+
+                          /// VIEW ALL BUTTON
                           TextButton(
-                            onPressed: widget.onNavigateToMeetings,
-                            style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => MeetingsPage(
+                                    user: widget.user,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                            ),
                             child: const Row(
                               children: [
-                                Text("View All", style: TextStyle(color: Color(0xFF1ABC9C), fontSize: 12)),
+                                Text(
+                                  "View All",
+                                  style: TextStyle(
+                                    color: Color(0xFF1ABC9C),
+                                    fontSize: 12,
+                                  ),
+                                ),
                                 SizedBox(width: 2),
-                                Icon(Icons.keyboard_arrow_right_rounded, size: 16, color: Color(0xFF1ABC9C)),
+                                Icon(
+                                  Icons.keyboard_arrow_right_rounded,
+                                  size: 16,
+                                  color: Color(0xFF1ABC9C),
+                                ),
                               ],
                             ),
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 12),
 
                       if (liveMeetings.isEmpty)
+
+                        /// EMPTY MEETING CARD
                         InkWell(
-                          onTap: widget.onNavigateToMeetings,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MeetingsPage(
+                                  user: widget.user,
+                                ),
+                              ),
+                            );
+                          },
                           borderRadius: BorderRadius.circular(20),
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 36,
+                              horizontal: 16,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF121214),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white.withOpacity(0.02)),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.02),
+                              ),
                             ),
                             child: Column(
                               children: [
-                                Icon(Icons.sensors_off_rounded, color: Colors.white.withOpacity(0.15), size: 32),
+                                Icon(
+                                  Icons.sensors_off_rounded,
+                                  color: Colors.white.withOpacity(0.15),
+                                  size: 32,
+                                ),
                                 const SizedBox(height: 12),
                                 const Text(
                                   "No active meetings detected",
-                                  style: TextStyle(color: Colors.white38, fontSize: 13, fontWeight: FontWeight.w500),
+                                  style: TextStyle(
+                                    color: Colors.white38,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 const Text(
                                   "Tap here to check upcoming meeting schedules",
-                                  style: TextStyle(color: Colors.white12, fontSize: 11),
+                                  style: TextStyle(
+                                    color: Colors.white12,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                         )
+
                       else
+
+                        /// LIVE MEETINGS
                         SizedBox(
                           height: 150,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: liveMeetings.length,
                             itemBuilder: (context, index) {
+
                               final meeting = liveMeetings[index];
+
                               return Container(
                                 width: MediaQuery.of(context).size.width * 0.78,
                                 margin: const EdgeInsets.only(right: 14),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [const Color(0xFF148F77).withOpacity(0.15), Colors.transparent],
+                                    colors: [
+                                      const Color(0xFF148F77)
+                                          .withOpacity(0.15),
+                                      Colors.transparent,
+                                    ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
                                   color: const Color(0xFF121214),
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: const Color(0xFF148F77).withOpacity(0.3), width: 1),
+                                  border: Border.all(
+                                    color: const Color(0xFF148F77)
+                                        .withOpacity(0.3),
+                                    width: 1,
+                                  ),
                                 ),
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(20),
-                                  onTap: widget.onNavigateToMeetings,
+
+                                  /// OPEN MEETINGS PAGE
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => MeetingsPage(
+                                          user: widget.user,
+                                        ),
+                                      ),
+                                    );
+                                  },
+
                                   child: Padding(
                                     padding: const EdgeInsets.all(18),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
+
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
+
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 3,
+                                              ),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFE74C3C).withOpacity(0.15),
-                                                borderRadius: BorderRadius.circular(6),
+                                                color: const Color(0xFFE74C3C)
+                                                    .withOpacity(0.15),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
                                               ),
                                               child: const Row(
                                                 children: [
-                                                  Icon(Icons.sensors, size: 10, color: Color(0xFFE74C3C)),
+                                                  Icon(
+                                                    Icons.sensors,
+                                                    size: 10,
+                                                    color: Color(0xFFE74C3C),
+                                                  ),
                                                   SizedBox(width: 4),
                                                   Text(
                                                     "LIVE OPERATIONAL",
-                                                    style: TextStyle(color: Color(0xFFE74C3C), fontSize: 9, fontWeight: FontWeight.bold),
+                                                    style: TextStyle(
+                                                      color: Color(0xFFE74C3C),
+                                                      fontSize: 9,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
                                                   ),
                                                 ],
                                               ),
                                             ),
-                                            Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.white.withOpacity(0.2)),
+
+                                            Icon(
+                                              Icons.arrow_forward_ios_rounded,
+                                              size: 12,
+                                              color: Colors.white
+                                                  .withOpacity(0.2),
+                                            ),
                                           ],
                                         ),
+
                                         const Spacer(),
+
                                         Text(
-                                          meeting['title']?.toString().toUpperCase() ?? 'UNTITLED SESSION',
+                                          meeting['title']
+                                                  ?.toString()
+                                                  .toUpperCase() ??
+                                              'UNTITLED SESSION',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
+
                                         const SizedBox(height: 4),
+
                                         Text(
-                                          meeting['agenda'] ?? 'No agenda matrix supplied.',
+                                          meeting['agenda'] ??
+                                              'No agenda matrix supplied.',
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12, height: 1.3),
+                                          style: TextStyle(
+                                            color:
+                                                Colors.white.withOpacity(0.4),
+                                            fontSize: 12,
+                                            height: 1.3,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -285,9 +416,10 @@ class _HomeContentState extends State<HomeContent> {
                             },
                           ),
                         ),
+
                       const SizedBox(height: 32),
 
-                      /// INFORMATION FEED BLOCK
+                      /// POSTS HEADER
                       Row(
                         children: [
                           Container(
@@ -310,6 +442,7 @@ class _HomeContentState extends State<HomeContent> {
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 14),
 
                       if (latestPosts.isEmpty)
@@ -321,55 +454,94 @@ class _HomeContentState extends State<HomeContent> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Center(
-                            child: Text("Broadcast channel array is empty.", style: TextStyle(color: Colors.white24, fontSize: 12)),
+                            child: Text(
+                              "Broadcast channel array is empty.",
+                              style: TextStyle(
+                                color: Colors.white24,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                         )
                       else
                         ...latestPosts.map((post) {
+
                           final creator = post['users'] ?? {};
+
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
                               color: const Color(0xFF121214),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white.withOpacity(0.02)),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.02),
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+
                                 Row(
                                   children: [
                                     CircleAvatar(
                                       radius: 14,
-                                      backgroundColor: const Color(0xFF148F77),
-                                      backgroundImage: creator['photo_url'] != null && creator['photo_url'] != ''
-                                          ? CachedNetworkImageProvider(creator['photo_url'])
-                                          : null,
-                                      child: creator['photo_url'] == null || creator['photo_url'] == ''
-                                          ? const Icon(Icons.person, size: 14, color: Colors.black)
+                                      backgroundColor:
+                                          const Color(0xFF148F77),
+                                      backgroundImage:
+                                          creator['photo_url'] != null &&
+                                                  creator['photo_url'] != ''
+                                              ? CachedNetworkImageProvider(
+                                                  creator['photo_url'],
+                                                )
+                                              : null,
+                                      child: creator['photo_url'] == null ||
+                                              creator['photo_url'] == ''
+                                          ? const Icon(
+                                              Icons.person,
+                                              size: 14,
+                                              color: Colors.black,
+                                            )
                                           : null,
                                     ),
+
                                     const SizedBox(width: 10),
+
                                     Expanded(
                                       child: Text(
                                         creator['name'] ?? 'System Sync',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
+
                                 const SizedBox(height: 12),
+
                                 Text(
                                   post['title'] ?? '',
-                                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
+
                                 const SizedBox(height: 6),
+
                                 Text(
                                   post['content'] ?? '',
-                                  style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12, height: 1.5),
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: 12,
+                                    height: 1.5,
+                                  ),
                                 ),
                               ],
                             ),
@@ -390,12 +562,15 @@ class _HomeContentState extends State<HomeContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: const Color(0xFF121214),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.03)),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.03),
+              ),
             ),
             child: const Row(
               children: [
@@ -416,23 +591,47 @@ class _HomeContentState extends State<HomeContent> {
               ],
             ),
           ),
+
           const SizedBox(height: 38),
+
           const SkeletonBox(width: 100, height: 14),
+
           const SizedBox(height: 16),
+
           Row(
             children: [
-              Expanded(child: SkeletonBox(height: 150, borderRadius: 20)),
+              Expanded(
+                child: SkeletonBox(
+                  height: 150,
+                  borderRadius: 20,
+                ),
+              ),
               const SizedBox(width: 14),
-              Expanded(child: SkeletonBox(height: 150, borderRadius: 20)),
+              Expanded(
+                child: SkeletonBox(
+                  height: 150,
+                  borderRadius: 20,
+                ),
+              ),
             ],
           ),
+
           const SizedBox(height: 38),
+
           const SkeletonBox(width: 120, height: 14),
+
           const SizedBox(height: 16),
-          ...List.generate(3, (_) => const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: SkeletonBox(height: 110, borderRadius: 20),
-          )),
+
+          ...List.generate(
+            3,
+            (_) => const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: SkeletonBox(
+                height: 110,
+                borderRadius: 20,
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -406,19 +406,66 @@ class _MemberCardState extends State<MemberCard> with SingleTickerProviderStateM
     );
   }
 
-  Widget fallbackAvatar() {
-    return Container(
-      width: double.infinity,
-      color: const Color(0xFF1A1A22),
-      child: Center(
-        child: Icon(
-          Icons.blur_on_rounded,
-          size: 46,
-          color: widget.color.withOpacity(0.25),
-        ),
+ Widget fallbackAvatar() {
+  return Container(
+    width: double.infinity,
+    height: double.infinity,
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          widget.color.withOpacity(0.18),
+          const Color(0xFF111117),
+          const Color(0xFF0D0D12),
+        ],
       ),
-    );
-  }
+    ),
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+
+        /// BACK GLOW
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: widget.color.withOpacity(0.08),
+          ),
+        ),
+
+        /// MAIN ICON
+        Icon(
+          Icons.person_rounded,
+          size: 115,
+          color: Colors.white.withOpacity(0.92),
+        ),
+
+        /// TOP LIGHT EFFECT
+        Positioned(
+          top: 18,
+          right: 18,
+          child: Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: widget.color.withOpacity(0.7),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.color.withOpacity(0.45),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget backCard(String name, String role, String usn) {
     return Container(
