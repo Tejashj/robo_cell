@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_provider.dart';
 
 class CommitteesPage extends StatefulWidget {
   const CommitteesPage({super.key});
@@ -11,16 +12,14 @@ class CommitteesPage extends StatefulWidget {
 }
 
 class _CommitteesPageState extends State<CommitteesPage> {
-  final supabase = Supabase.instance.client;
   int? flippedCardId;
-  
-  // Cache the future here to prevent infinite loop fetches on setState
-  late Future<List<Map<String, dynamic>>> _hierarchyFuture;
 
   @override
   void initState() {
     super.initState();
-    _hierarchyFuture = fetchHierarchyData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AppProvider>(context, listen: false).fetchHierarchy();
+    });
   }
 
   Color committeeColor(String committee) {
@@ -34,39 +33,7 @@ class _CommitteesPageState extends State<CommitteesPage> {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchHierarchyData() async {
-    // 1. Fetch from the structured view
-    final List<dynamic> response = await supabase
-        .from('users_hierarchy_view')
-        .select()
-        .order('display_order', ascending: true)
-        .order('id', ascending: true);
 
-    List<Map<String, dynamic>> hierarchyList =
-        List<Map<String, dynamic>>.from(response);
-
-    if (hierarchyList.isEmpty) return [];
-
-    // 2. Grab all IDs and fetch LinkedIn strings directly from 'users' table
-    final List<dynamic> userIds = hierarchyList.map((row) => row['id']).toList();
-    
-    final List<dynamic> usersResponse = await supabase
-        .from('users')
-        .select('id, linkedin')
-        .inFilter('id', userIds);
-
-    final Map<dynamic, String?> linkedinMapping = {
-      for (var row in usersResponse) row['id']: row['linkedin']?.toString().trim()
-    };
-
-    // 3. Merge the linkedin field into the view dataset
-    for (var row in hierarchyList) {
-      final userId = row['id'];
-      row['linkedin'] = linkedinMapping[userId];
-    }
-
-    return hierarchyList;
-  }
 
   Map<String, List<Map<String, dynamic>>> groupMembersByCommittee(
     List<Map<String, dynamic>> data,
@@ -108,27 +75,25 @@ class _CommitteesPageState extends State<CommitteesPage> {
             ),
           ),
         ),
-        body: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _hierarchyFuture, // Utilizing our initialized future instance
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return const Center(
-                child: Text(
-                  'Error loading hierarchy',
-                  style: TextStyle(color: Colors.white70),
-                ),
-              );
-            }
-
-            if (!snapshot.hasData) {
+        body: Consumer<AppProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoadingHierarchy && provider.hierarchyData.isEmpty) {
               return const Center(
                 child: CircularProgressIndicator(
                   color: Color(0xFF16A085),
                 ),
               );
             }
+            if (provider.hierarchyData.isEmpty) {
+              return const Center(
+                child: Text(
+                  'No hierarchy data',
+                  style: TextStyle(color: Colors.white70),
+                ),
+              );
+            }
 
-            final groupedData = groupMembersByCommittee(snapshot.data!);
+            final groupedData = groupMembersByCommittee(provider.hierarchyData);
 
             return ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),

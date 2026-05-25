@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_provider.dart';
 
 class MeetingsPage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -22,14 +24,10 @@ class MeetingsPage extends StatefulWidget {
 class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderStateMixin {
   final supabase = Supabase.instance.client;
 
-  List meetings = [];
-  List committees = [];
-  List users = [];
   List selectedCommittees = [];
   List selectedUsers = [];
 
   bool allCommittees = false;
-  bool loading = true;
   bool creatingMeeting = false;
   bool markingAttendance = false;
 
@@ -51,7 +49,12 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AppProvider>(context, listen: false).fetchMeetings(
+        loadUsers: true,
+        userCommitteeId: isAdmin() || isServiceDirector() ? null : widget.user['committee_id'],
+      );
+    });
   }
 
   @override
@@ -83,37 +86,12 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
   }
 
   Future<void> loadData() async {
-    try {
-      final meetingsData = await supabase
-          .from('meetings')
-          .select()
-          .order('scheduled_at', ascending: true);
-
-      final committeeData = await supabase.from('committees').select();
-
-      dynamic usersData;
-      if (isAdmin() || isServiceDirector()) {
-        usersData = await supabase.from('users').select().order('name');
-      } else {
-        usersData = await supabase
-            .from('users')
-            .select()
-            .eq('committee_id', widget.user['committee_id'])
-            .order('name');
-      }
-
-      if (!mounted) return;
-      setState(() {
-        meetings = meetingsData;
-        committees = committeeData;
-        users = usersData;
-        loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => loading = false);
-      showSnack(e.toString(), const Color(0xFFE74C3C), Icons.error_outline);
-    }
+    final provider = Provider.of<AppProvider>(context, listen: false);
+    await provider.fetchMeetings(
+      forceRefresh: true,
+      loadUsers: true,
+      userCommitteeId: isAdmin() || isServiceDirector() ? null : widget.user['committee_id'],
+    );
   }
 
   void showSnack(String text, Color accentColor, IconData icon) {
@@ -198,10 +176,11 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
         'is_completed': false,
       }).select().single();
 
+      final provider = Provider.of<AppProvider>(context, listen: false);
       final meetingId = response['id'];
       final targetCommitteeIds = isCommitteeHead()
           ? [widget.user['committee_id']]
-          : allCommittees ? committees.map((c) => c['id']).toList() : selectedCommittees;
+          : allCommittees ? provider.committees.map((c) => c['id']).toList() : selectedCommittees;
 
       for (final committeeId in targetCommitteeIds) {
         await supabase.from('meeting_committees').insert({
@@ -215,9 +194,9 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
         finalUserIds.addAll(selectedUsers);
       } else {
         if (allCommittees) {
-          finalUserIds.addAll(users.map((u) => u['id']));
+          finalUserIds.addAll(provider.users.map((u) => u['id']));
         } else if (targetCommitteeIds.isNotEmpty) {
-          final targetedUsers = users.where((u) => targetCommitteeIds.contains(u['committee_id']));
+          final targetedUsers = provider.users.where((u) => targetCommitteeIds.contains(u['committee_id']));
           finalUserIds.addAll(targetedUsers.map((u) => u['id']));
         }
       }
@@ -538,21 +517,26 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
         floatingActionButton: canCreateMeeting()
             ? FloatingActionButton(backgroundColor: kPrimaryTeal, foregroundColor: Colors.white, onPressed: showCreateDialog, child: const Icon(Icons.add))
             : null,
-        body: loading
-            ? const Center(child: CircularProgressIndicator(color: kPrimaryTeal, strokeWidth: 2))
-            : TabBarView(
-                controller: _tabController,
-                children: [
-                  buildMeetingList(ScopeType.live),
-                  buildMeetingList(ScopeType.scheduled),
-                  buildMeetingList(ScopeType.ended),
-                ],
-              ),
+        body: Consumer<AppProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoadingMeetings && provider.meetings.isEmpty) {
+              return const Center(child: CircularProgressIndicator(color: kPrimaryTeal, strokeWidth: 2));
+            }
+            return TabBarView(
+              controller: _tabController,
+              children: [
+                buildMeetingList(ScopeType.live, provider.meetings),
+                buildMeetingList(ScopeType.scheduled, provider.meetings),
+                buildMeetingList(ScopeType.ended, provider.meetings),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget buildMeetingList(ScopeType type) {
+  Widget buildMeetingList(ScopeType type, List<Map<String, dynamic>> meetings) {
     final filtered = meetings.where((m) {
       final isApproved = m['approval_status'] == 'approved';
       final isLive = m['attendance_enabled'] == true && m['is_completed'] != true;

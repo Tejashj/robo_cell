@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_provider.dart';
 
 class FeedPage extends StatefulWidget {
 
@@ -21,12 +23,7 @@ class _FeedPageState
   final supabase =
       Supabase.instance.client;
 
-  bool loading = true;
-
   bool posting = false;
-
-  List<Map<String, dynamic>>
-      posts = [];
 
   final titleController =
       TextEditingController();
@@ -39,7 +36,9 @@ class _FeedPageState
 
     super.initState();
 
-    loadPosts();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AppProvider>(context, listen: false).fetchPosts();
+    });
   }
 
   bool canPost() {
@@ -67,40 +66,8 @@ class _FeedPageState
   }
 
   Future<void> loadPosts() async {
-
-    try {
-
-      final data =
-          await supabase
-
-              .from('posts')
-
-              .select('''
-                *,
-                users(
-                  name,
-                  role,
-                  photo_url
-                )
-              ''')
-
-              .order(
-                'created_at',
-                ascending: false,
-              );
-
-      posts =
-          List<Map<String, dynamic>>
-              .from(data);
-
-    } catch (e) {
-
-      debugPrint(e.toString());
-    }
-
-    setState(() {
-      loading = false;
-    });
+    final provider = Provider.of<AppProvider>(context, listen: false);
+    await provider.fetchPosts(forceRefresh: true);
   }
 
   Future<void> createPost()
@@ -536,6 +503,9 @@ class _FeedPageState
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+    final loading = provider.isLoadingPosts;
+    final posts = provider.posts;
 
     return Scaffold(
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_provider.dart';
 
 class HomeContent extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -16,56 +17,32 @@ class HomeContent extends StatefulWidget {
 }
 
 class _HomeContentState extends State<HomeContent> {
-  final supabase = Supabase.instance.client;
-  List<Map<String, dynamic>> latestPosts = [];
-  List<Map<String, dynamic>> liveMeetings = [];
-  bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    initialize();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<AppProvider>(context, listen: false);
+      provider.fetchPosts();
+      provider.fetchMeetings();
+    });
   }
 
   Future<void> initialize() async {
+    final provider = Provider.of<AppProvider>(context, listen: false);
     await Future.wait([
-      loadPosts(),
-      loadLiveMeetings(),
+      provider.fetchPosts(forceRefresh: true),
+      provider.fetchMeetings(forceRefresh: true),
     ]);
-    if (mounted) {
-      setState(() => loading = false);
-    }
-  }
-
-  Future<void> loadPosts() async {
-    try {
-      final data = await supabase
-          .from('posts')
-          .select('*, users(name, photo_url, role)')
-          .order('created_at', ascending: false)
-          .limit(3);
-      latestPosts = List<Map<String, dynamic>>.from(data);
-    } catch (e) {
-      debugPrint("Post fetch lifecycle failure: ${e.toString()}");
-    }
-  }
-
-  Future<void> loadLiveMeetings() async {
-    try {
-      final data = await supabase
-          .from('meetings')
-          .select()
-          .eq('attendance_enabled', true)
-          .neq('is_completed', true)
-          .order('scheduled_at', ascending: true);
-      liveMeetings = List<Map<String, dynamic>>.from(data);
-    } catch (e) {
-      debugPrint("Live session engine failure: ${e.toString()}");
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+    final loading = provider.isLoadingPosts || provider.isLoadingMeetings;
+    final latestPosts = provider.latestPosts;
+    final liveMeetings = provider.liveMeetings;
+
     final committee = widget.user['committees']?['name'] ?? 'General Operations';
     final photo = widget.user['photo_url'];
     final roleString = widget.user['role'].toString().replaceAll('_', ' ').toUpperCase();

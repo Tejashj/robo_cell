@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
+import 'providers/app_provider.dart';
 import 'screens/screens/splashscreen.dart';
 
 Future<void> main() async {
 
   WidgetsFlutterBinding
       .ensureInitialized();
+
+  /// HIVE INIT
+  await Hive.initFlutter();
+  await Hive.openBox('robo_cache');
 
   /// LOAD ENV
   await dotenv.load(
@@ -28,7 +35,12 @@ Future<void> main() async {
   );
 
   runApp(
-    const RoboCellApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppProvider()),
+      ],
+      child: const RoboCellApp(),
+    ),
   );
 }
 
