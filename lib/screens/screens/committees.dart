@@ -456,7 +456,7 @@ class _MemberCardState extends State<MemberCard> with SingleTickerProviderStateM
                 BoxShadow(
                   color: widget.color.withOpacity(0.45),
                   blurRadius: 12,
-                  spreadRadius: 2,
+                  spreadRadius: 2.1,
                 ),
               ],
             ),
