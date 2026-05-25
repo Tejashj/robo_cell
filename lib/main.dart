@@ -62,7 +62,7 @@ class RoboCellApp
       debugShowCheckedModeBanner:
           false,
 
-      title: 'ROBO CELL',
+      title: 'Robo Cell',
 
       theme: AppTheme.darkTheme,
 
