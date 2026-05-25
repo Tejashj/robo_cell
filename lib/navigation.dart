@@ -4,6 +4,7 @@ import 'package:robo_cell/screens/screens/home.dart';
 import 'package:robo_cell/screens/screens/meetings.dart';
 import 'package:robo_cell/screens/screens/about.dart';
 import 'package:robo_cell/screens/screens/profile.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MainNavigation extends StatefulWidget {
 
@@ -111,6 +112,7 @@ class _MainNavigationState
 
         actions: [
 
+          if (currentIndex != 0)
           Padding(
 
             padding:
@@ -157,7 +159,7 @@ class _MainNavigationState
                   backgroundImage:
                       photo != null &&
                               photo != ''
-                          ? NetworkImage(
+                          ? CachedNetworkImageProvider(
                               photo,
                             )
                           : null,
