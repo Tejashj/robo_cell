@@ -20,21 +20,21 @@ Future<void> main() async {
   await Hive.initFlutter();
   await Hive.openBox('robo_cache');
 
-  /// LOAD ENV
-  await dotenv.load(
-    fileName: ".env",
-  );
+  /// LOAD ENV (for mobile fallback)
+  await dotenv.load(fileName: ".env");
 
   /// SUPABASE INIT
+  /// Web: uses --dart-define flags
+  /// Mobile: falls back to .env file
+  const webUrl = String.fromEnvironment('SUPABASE_URL');
+  const webKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
+  final supabaseUrl = webUrl.isNotEmpty ? webUrl : dotenv.env['SUPABASE_URL']!;
+  final supabaseKey = webKey.isNotEmpty ? webKey : dotenv.env['SUPABASE_ANON_KEY']!;
+
   await Supabase.initialize(
-
-    url:
-        dotenv.env[
-            'SUPABASE_URL']!,
-
-    anonKey:
-        dotenv.env[
-            'SUPABASE_ANON_KEY']!,
+    url: supabaseUrl,
+    anonKey: supabaseKey,
   );
 
   runApp(
@@ -47,27 +47,16 @@ Future<void> main() async {
   );
 }
 
-class RoboCellApp
-    extends StatelessWidget {
-
-  const RoboCellApp({
-    super.key,
-  });
+class RoboCellApp extends StatelessWidget {
+  const RoboCellApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     return MaterialApp(
-
-      debugShowCheckedModeBanner:
-          false,
-
+      debugShowCheckedModeBanner: false,
       title: 'Robo Cell',
-
       theme: AppTheme.darkTheme,
-
-      home:
-          const SplashScreen(),
+      home: const SplashScreen(),
     );
   }
 }

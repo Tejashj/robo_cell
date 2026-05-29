@@ -1,0 +1,2 @@
+flutter build web --release --dart-define=SUPABASE_URL=https://zeyhfgtoujfunlvwfauj.supabase.co --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpleWhmZ3RvdWpmdW5sdndmYXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjczODIsImV4cCI6MjA5MjE0MzM4Mn0.cLET28uGqQOI2V1zpd0Cp4EnDVrXfy6z5A4tUC6Jr90
+firebase deploy --only hosting --project robocell-e2913
