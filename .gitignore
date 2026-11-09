@@ -47,3 +47,13 @@ app.*.map.json
 # 🔐 Environment variables (IMPORTANT)
 .env
 .env.*
+.env.admin
+*.env.admin
+security_migration/.env.admin
+
+# 🔐 Release signing credentials (CRITICAL)
+key.properties
+*.jks
+*.keystore
+android/key.properties
+android/app/key.properties

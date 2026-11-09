@@ -1,0 +1,25 @@
+Welcome to the official Robo Cell mobile application — the premier digital platform connecting student innovators, committee leads, mentors, and robotics enthusiasts.
+
+Robo Cell is dedicated to hands-on engineering, artificial intelligence research, embedded hardware prototyping, and technical excellence. This application provides a unified hub for department announcements, committee structures, event memories, and secure member access.
+
+KEY FEATURES:
+
+• Department Community Hub
+Stay informed with real-time department announcements, upcoming workshops, hackathons, and general meeting updates directly on your home feed.
+
+• Committee Hierarchy & Member Directory
+Explore the organizational layout of Robo Cell. Discover active committees including the Executive Board, Technical Committee, Design & Creative, Public Relations, and Event Management along with member roles and leadership contacts.
+
+• Event Gallery
+Relive past robotics competitions, soccer tournaments, technical workshops, and department memories through the high-resolution event media gallery.
+
+• Guest & Public Mode
+Visitors and incoming students can seamlessly browse public department information, committee overview, mission statements, and event gallery without requiring account registration.
+
+• Secure Registered Member Access
+Registered department leads and members enjoy streamlined profile authentication backed by secure Supabase Auth and native device biometrics (fingerprint/face verification) on supported devices.
+
+• Department Mission & Vision
+Discover the core pillars driving Robo Cell — empowering students with real-world engineering skills, fostering collaborative innovation, and competing at national robotics summits.
+
+Download Robo Cell today to stay connected with the forefront of student robotics and AI innovation!

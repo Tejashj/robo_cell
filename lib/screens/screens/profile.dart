@@ -3,63 +3,42 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../theme/design_system.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_card.dart';
+import '../../widgets/app_snackbar.dart';
+import '../../widgets/settings_tile.dart';
 import '../../widgets/skeleton_loader.dart';
 import 'login.dart';
 
 class ProfilePage extends StatefulWidget {
-
   final Map<String, dynamic> user;
 
-  const ProfilePage({
-    super.key,
-    required this.user,
-  });
+  const ProfilePage({super.key, required this.user});
 
   @override
-  State<ProfilePage> createState() =>
-      _ProfilePageState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState
-    extends State<ProfilePage> {
-
-  late Map<String, dynamic>
-      currentUser;
-
+class _ProfilePageState extends State<ProfilePage> {
+  late Map<String, dynamic> currentUser;
   bool savingLinkedin = false;
-
-  final linkedinController =
-      TextEditingController();
+  final linkedinController = TextEditingController();
 
   @override
   void initState() {
-
     super.initState();
-
     currentUser = widget.user;
-
-    linkedinController.text =
-        currentUser['linkedin'] ?? '';
+    linkedinController.text = currentUser['linkedin'] ?? '';
   }
 
-  Future<void> saveLinkedin()
-  async {
-
-    if (linkedinController.text
-        .trim()
-        .isEmpty) {
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-
-        const SnackBar(
-          content:
-              Text(
-            "Enter LinkedIn URL",
-          ),
-        ),
+  Future<void> saveLinkedin() async {
+    if (linkedinController.text.trim().isEmpty) {
+      AppSnackBar.show(
+        context,
+        message: "Enter LinkedIn URL",
+        type: SnackBarType.warning,
       );
-
       return;
     }
 
@@ -68,58 +47,31 @@ class _ProfilePageState
     });
 
     try {
-
-      await Supabase
-          .instance
-          .client
+      await Supabase.instance.client
           .from('users')
           .update({
+            'linkedin': linkedinController.text.trim(),
+            'linkedin_locked': true,
+          })
+          .eq('id', currentUser['id']);
 
-        'linkedin':
-            linkedinController.text
-                .trim(),
-
-        'linkedin_locked':
-            true,
-      })
-          .eq(
-            'id',
-            currentUser['id'],
-          );
-
-      currentUser['linkedin'] =
-          linkedinController.text
-              .trim();
-
-      currentUser[
-          'linkedin_locked'] = true;
+      currentUser['linkedin'] = linkedinController.text.trim();
+      currentUser['linkedin_locked'] = true;
 
       setState(() {});
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-
-        const SnackBar(
-          content:
-              Text(
-            "LinkedIn Saved Successfully",
-          ),
-        ),
+      AppSnackBar.show(
+        context,
+        message: "LinkedIn Saved Successfully",
+        type: SnackBarType.success,
       );
-
     } catch (e) {
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-
-        SnackBar(
-          content:
-              Text(
-            e.toString(),
-          ),
-        ),
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: e.toString(),
+        type: SnackBarType.error,
       );
     }
 
@@ -129,132 +81,48 @@ class _ProfilePageState
   }
 
   Widget infoCard({
-
     required IconData icon,
-
     required String title,
-
     required String value,
   }) {
-
     return Container(
-
-      margin:
-          const EdgeInsets.only(
-        bottom: 16,
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.borderSubtle),
       ),
-
-      padding:
-          const EdgeInsets.all(
-        18,
-      ),
-
-      decoration:
-          BoxDecoration(
-
-        color:
-            Colors.white
-                .withOpacity(
-          0.03,
-        ),
-
-        borderRadius:
-            BorderRadius.circular(
-          22,
-        ),
-
-        border: Border.all(
-          color:
-              Colors.white10,
-        ),
-      ),
-
       child: Row(
-
         children: [
-
           Container(
-
-            padding:
-                const EdgeInsets.all(
-              12,
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.primaryEmerald.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadius.chip),
             ),
-
-            decoration:
-                BoxDecoration(
-
-              color:
-                  const Color(
-                0xFF16A085,
-              ).withOpacity(
-                0.15,
-              ),
-
-              borderRadius:
-                  BorderRadius.circular(
-                14,
-              ),
-            ),
-
-            child: Icon(
-
-              icon,
-
-              color:
-                  const Color(
-                0xFF16A085,
-              ),
-            ),
+            child: Icon(icon, color: AppColors.primaryEmerald, size: 20),
           ),
-
-          const SizedBox(
-            width: 16,
-          ),
-
+          const SizedBox(width: AppSpacing.lg),
           Expanded(
-
             child: Column(
-
-              crossAxisAlignment:
-                  CrossAxisAlignment
-                      .start,
-
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 Text(
-
                   title,
-
-                  style:
-                      const TextStyle(
-
-                    color:
-                        Colors.grey,
-
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
                     fontSize: 11,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-
-                const SizedBox(
-                  height: 6,
-                ),
-
+                const SizedBox(height: 2),
                 Text(
-
                   value,
-
-                  style:
-                      const TextStyle(
-
-                    color:
-                        Color(
-                      0xFFD8CFB4,
-                    ),
-
-                    fontWeight:
-                        FontWeight.bold,
-
-                    fontSize: 15,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
                 ),
               ],
@@ -267,507 +135,244 @@ class _ProfilePageState
 
   @override
   Widget build(BuildContext context) {
-
-    final photo =
-        currentUser['photo_url'];
-
-    final linkedinLocked =
-        currentUser[
-                'linkedin_locked'] ==
-            true;
+    final photo = currentUser['photo_url'];
+    final linkedinLocked = currentUser['linkedin_locked'] == true;
+    final isGuest =
+        currentUser['role']?.toString().toUpperCase() == 'GUEST' ||
+        currentUser['id'] == 'guest_user';
 
     return Scaffold(
-
-      backgroundColor:
-          Colors.black,
-
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-
-        backgroundColor:
-            Colors.black,
-
-        title:
-            const Text(
-          "PROFILE",
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        title: const Text(
+          "PROFILE & SETTINGS",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            letterSpacing: 1.2,
+          ),
         ),
       ),
-
       body: SingleChildScrollView(
-
-        padding:
-            const EdgeInsets.all(
-          20,
-        ),
-
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
-
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            /// PROFILE TOP CARD
-            Container(
-
-              width:
-                  double.infinity,
-
-              padding:
-                  const EdgeInsets.all(
-                24,
+            /// LARGE PROFILE HEADER
+            AppCard(
+              isGlass: true,
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.primaryEmerald,
+                        width: 2.5,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 56,
+                      backgroundColor: AppColors.surface,
+                      child: ClipOval(
+                        child: photo != null && photo.toString().isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: photo.toString(),
+                                width: 112,
+                                height: 112,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) =>
+                                    const SkeletonCircle(radius: 56),
+                                errorWidget: (context, url, error) =>
+                                    const Icon(
+                                      Icons.person_rounded,
+                                      size: 50,
+                                      color: AppColors.primaryEmerald,
+                                    ),
+                              )
+                            : const Icon(
+                                Icons.person_rounded,
+                                size: 50,
+                                color: AppColors.primaryEmerald,
+                              ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    currentUser['name'] ?? '',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryEmerald.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppRadius.chip),
+                      border: Border.all(
+                        color: AppColors.primaryEmerald.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Text(
+                      currentUser['role']
+                          .toString()
+                          .replaceAll('_', ' ')
+                          .toUpperCase(),
+                      style: const TextStyle(
+                        color: AppColors.primaryEmerald,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    "Department of Robotics & Artificial Intelligence",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  ),
+                ],
               ),
+            ),
 
-              decoration:
-                  BoxDecoration(
+            const SizedBox(height: AppSpacing.xl),
 
-                gradient:
-                    LinearGradient(
+            /// MEMBER DETAILS
+            const Text(
+              "MEMBER DETAILS",
+              style: TextStyle(
+                color: AppColors.headingGold,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            infoCard(
+              icon: Icons.badge_rounded,
+              title: "USN",
+              value: currentUser['usn'] ?? '',
+            ),
+            infoCard(
+              icon: Icons.groups_rounded,
+              title: "COMMITTEE",
+              value: currentUser['committees']?['name'] ?? 'General Committee',
+            ),
+            infoCard(
+              icon: Icons.email_rounded,
+              title: "EMAIL",
+              value: currentUser['email'] ?? '',
+            ),
 
-                  colors: [
+            if (!isGuest) ...[
+              const SizedBox(height: AppSpacing.lg),
 
-                    const Color(
-                      0xFF16A085,
-                    ).withOpacity(
-                      0.25,
+              /// LINKEDIN SECTION
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "LINKEDIN PROFILE",
+                      style: TextStyle(
+                        color: AppColors.headingGold,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        letterSpacing: 1,
+                      ),
                     ),
-
-                    Colors.white
-                        .withOpacity(
-                      0.03,
-                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    if (!linkedinLocked)
+                      Column(
+                        children: [
+                          TextField(
+                            controller: linkedinController,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                            ),
+                            decoration: const InputDecoration(
+                              hintText: "Enter LinkedIn URL",
+                              prefixIcon: Icon(
+                                Icons.link_rounded,
+                                color: AppColors.primaryEmerald,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          AppButton(
+                            text: "SAVE LINKEDIN",
+                            width: double.infinity,
+                            isLoading: savingLinkedin,
+                            onPressed: savingLinkedin ? null : saveLinkedin,
+                          ),
+                        ],
+                      )
+                    else
+                      Text(
+                        currentUser['linkedin'] ?? 'No LinkedIn Added',
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
                   ],
                 ),
-
-                borderRadius:
-                    BorderRadius.circular(
-                  30,
-                ),
               ),
+            ],
 
-              child: Column(
+            const SizedBox(height: AppSpacing.xl),
 
-                children: [
-
-                  CircleAvatar(
-
-                    radius: 60,
-
-                    backgroundColor:
-                        const Color(
-                      0xFF16A085,
-                    ),
-
-                    child: ClipOval(
-
-                      child:
-                          photo != null &&
-                                  photo
-                                      .toString()
-                                      .isNotEmpty
-
-                              ? CachedNetworkImage(
-
-                                  imageUrl: photo,
-
-                                  width: 112,
-
-                                  height: 112,
-
-                                  fit:
-                                      BoxFit.cover,
-
-                                  placeholder: (context, url) => const SkeletonCircle(radius: 56),
-                                  errorWidget:
-                                      (
-                                        context,
-                                        url,
-                                        error,
-                                      ) {
-                                    return const Icon(
-                                      Icons.person,
-                                      size: 55,
-                                      color:
-                                          Color(
-                                        0xFF16A085,
-                                      ),
-                                    );
-                                  },
-                                )
-
-                              : const Icon(
-
-                                  Icons.person,
-
-                                  size: 55,
-
-                                  color:
-                                      Color(
-                                    0xFF16A085,
-                                  ),
-                                ),
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 20,
-                  ),
-
-                  Text(
-
-                    currentUser['name'],
-
-                    textAlign:
-                        TextAlign.center,
-
-                    style:
-                        const TextStyle(
-
-                      color:
-                          Color(
-                        0xFFD8CFB4,
-                      ),
-
-                      fontSize: 26,
-
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 8,
-                  ),
-
-                  Text(
-
-                    currentUser['role']
-                        .toString()
-                        .replaceAll(
-                          '_',
-                          ' ',
-                        )
-                        .toUpperCase(),
-
-                    style:
-                        const TextStyle(
-
-                      color:
-                          Color(
-                        0xFF16A085,
-                      ),
-
-                      letterSpacing:
-                          1.5,
-                    ),
-                  ),
-                ],
+            /// ABOUT & VERSION
+            const Text(
+              "ABOUT",
+              style: TextStyle(
+                color: AppColors.headingGold,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
               ),
             ),
-
-            const SizedBox(
-              height: 30,
+            const SizedBox(height: AppSpacing.sm),
+            const SettingsTile(
+              icon: Icons.info_outline_rounded,
+              title: "Version",
+              subtitle: "Robo Cell v1.0.1 (Build 5)",
             ),
 
-            /// INFO CARDS
-            infoCard(
-
-              icon:
-                  Icons.badge,
-
-              title: "USN",
-
-              value:
-                  currentUser['usn'],
-            ),
-
-            infoCard(
-
-              icon:
-                  Icons.groups,
-
-              title:
-                  "COMMITTEE",
-
-              value:
-                  currentUser[
-                          'committees']
-                      ?['name'] ??
-                  '',
-            ),
-
-            infoCard(
-
-              icon:
-                  Icons.email,
-
-              title:
-                  "EMAIL",
-
-              value:
-                  currentUser[
-                          'email'] ??
-                      '',
-            ),
-
-            /// LINKEDIN SECTION
-            Container(
-
-              width:
-                  double.infinity,
-
-              padding:
-                  const EdgeInsets.all(
-                20,
-              ),
-
-              decoration:
-                  BoxDecoration(
-
-                color:
-                    Colors.white
-                        .withOpacity(
-                  0.03,
-                ),
-
-                borderRadius:
-                    BorderRadius.circular(
-                  24,
-                ),
-
-                border: Border.all(
-                  color:
-                      Colors.white10,
-                ),
-              ),
-
-              child: Column(
-
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-
-                children: [
-
-                  const Text(
-
-                    "LINKEDIN PROFILE",
-
-                    style:
-                        TextStyle(
-
-                      color:
-                          Color(
-                        0xFFD8CFB4,
-                      ),
-
-                      fontWeight:
-                          FontWeight.bold,
-
-                      letterSpacing:
-                          1,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 18,
-                  ),
-
-                  if (!linkedinLocked)
-
-                    Column(
-
-                      children: [
-
-                        TextField(
-
-                          controller:
-                              linkedinController,
-
-                          style:
-                              const TextStyle(
-                            color:
-                                Colors.white,
-                          ),
-
-                          decoration:
-                              InputDecoration(
-
-                            hintText:
-                                "Enter LinkedIn URL",
-
-                            hintStyle:
-                                const TextStyle(
-                              color:
-                                  Colors.grey,
-                            ),
-
-                            filled: true,
-
-                            fillColor:
-                                Colors.white
-                                    .withOpacity(
-                              0.03,
-                            ),
-
-                            border:
-                                OutlineInputBorder(
-
-                              borderRadius:
-                                  BorderRadius.circular(
-                                18,
-                              ),
-
-                              borderSide:
-                                  BorderSide.none,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height: 18,
-                        ),
-
-                        SizedBox(
-
-                          width:
-                              double.infinity,
-
-                          height: 52,
-
-                          child:
-                              ElevatedButton(
-
-                            style:
-                                ElevatedButton.styleFrom(
-
-                              backgroundColor:
-                                  const Color(
-                                0xFF16A085,
-                              ),
-                            ),
-
-                            onPressed:
-                                savingLinkedin
-                                    ? null
-                                    : saveLinkedin,
-
-                            child:
-                                savingLinkedin
-
-                                    ? const CircularProgressIndicator(
-                                        color:
-                                            Colors.black,
-                                      )
-
-                                    : const Text(
-
-                                        "SAVE LINKEDIN",
-
-                                        style:
-                                            TextStyle(
-
-                                          color:
-                                              Colors.black,
-
-                                          fontWeight:
-                                              FontWeight.bold,
-                                        ),
-                                      ),
-                          ),
-                        ),
-                      ],
-                    )
-
-                  else
-
-                    Text(
-
-                      currentUser[
-                              'linkedin'] ??
-                          'No LinkedIn Added',
-
-                      style:
-                          const TextStyle(
-
-                        color:
-                            Colors.white70,
-
-                        height: 1.5,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            const SizedBox(
-              height: 30,
-            ),
+            const SizedBox(height: AppSpacing.xxl),
 
             /// LOGOUT BUTTON
-            SizedBox(
+            AppButton(
+              text: "LOGOUT",
+              width: double.infinity,
+              variant: AppButtonVariant.outlined,
+              icon: Icons.logout_rounded,
+              onPressed: () async {
+                await Supabase.instance.client.auth.signOut();
+                Hive.box('robo_cache').delete('logged_in_user');
 
-              width:
-                  double.infinity,
-
-              height: 55,
-
-              child:
-                  ElevatedButton.icon(
-
-                style:
-                    ElevatedButton.styleFrom(
-
-                  backgroundColor:
-                      Colors.red
-                          .withOpacity(
-                    0.85,
-                  ),
-                ),
-
-                onPressed: () {
-
-                  Hive.box('robo_cache').delete('logged_in_user');
-
-                  Navigator.pushAndRemoveUntil(
-
-                    context,
-
-                    MaterialPageRoute(
-
-                      builder: (_) {
-
-                        return const LoginScreen();
-                      },
-                    ),
-
-                    (route) => false,
-                  );
-                },
-
-                icon:
-                    const Icon(
-                  Icons.logout,
-                  color: Colors.white,
-                ),
-
-                label:
-                    const Text(
-
-                  "LOGOUT",
-
-                  style:
-                      TextStyle(
-
-                    color:
-                        Colors.white,
-
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-              ),
+                if (!context.mounted) return;
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              },
             ),
 
-            const SizedBox(
-              height: 60,
-            ),
+            const SizedBox(height: AppSpacing.xxxl),
           ],
         ),
       ),

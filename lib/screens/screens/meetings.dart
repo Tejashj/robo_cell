@@ -1,28 +1,32 @@
 import 'dart:io';
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/app_provider.dart';
+import '../../theme/design_system.dart';
+import '../../widgets/app_bottom_sheet.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_card.dart';
+import '../../widgets/app_empty_state.dart';
+import '../../widgets/app_snackbar.dart';
 import '../../widgets/skeleton_loader.dart';
 
 class MeetingsPage extends StatefulWidget {
   final Map<String, dynamic> user;
 
-  const MeetingsPage({
-    super.key,
-    required this.user,
-  });
+  const MeetingsPage({super.key, required this.user});
 
   @override
   State<MeetingsPage> createState() => _MeetingsPageState();
 }
 
-class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderStateMixin {
+class _MeetingsPageState extends State<MeetingsPage>
+    with SingleTickerProviderStateMixin {
   final supabase = Supabase.instance.client;
 
   List selectedCommittees = [];
@@ -40,12 +44,6 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
   final descriptionController = TextEditingController();
   final verifyCodeController = TextEditingController();
 
-  static const Color kPrimaryTeal = Color(0xFF148F77);
-  static const Color kAccentTeal = Color(0xFF1ABC9C);
-  static const Color kBackgroundBg = Color(0xFF09090A);
-  static const Color kSurfaceCard = Color(0xFF121214);
-  static const Color kSurfaceOverlay = Color(0xFF18181B);
-
   @override
   void initState() {
     super.initState();
@@ -53,7 +51,9 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AppProvider>(context, listen: false).fetchMeetings(
         loadUsers: true,
-        userCommitteeId: isAdmin() || isServiceDirector() ? null : widget.user['committee_id'],
+        userCommitteeId: isAdmin() || isServiceDirector()
+            ? null
+            : widget.user['committee_id'],
       );
     });
   }
@@ -70,7 +70,9 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
 
   bool isAdmin() {
     final role = widget.user['role'].toString().toLowerCase();
-    return role == 'president' || role == 'secretary' || role == 'joint_secretary';
+    return role == 'president' ||
+        role == 'secretary' ||
+        role == 'joint_secretary';
   }
 
   bool isServiceDirector() {
@@ -91,41 +93,23 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
     await provider.fetchMeetings(
       forceRefresh: true,
       loadUsers: true,
-      userCommitteeId: isAdmin() || isServiceDirector() ? null : widget.user['committee_id'],
+      userCommitteeId: isAdmin() || isServiceDirector()
+          ? null
+          : widget.user['committee_id'],
     );
   }
 
   void showSnack(String text, Color accentColor, IconData icon) {
     HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          content: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: kSurfaceOverlay,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: accentColor.withOpacity(0.2)),
-            ),
-            child: Row(
-              children: [
-                Icon(icon, color: accentColor, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    text,
-                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+    AppSnackBar.show(
+      context,
+      message: text,
+      type: accentColor == AppColors.error
+          ? SnackBarType.error
+          : (accentColor == AppColors.warning
+                ? SnackBarType.warning
+                : SnackBarType.info),
+    );
   }
 
   String generateCode() => List.generate(7, (_) => Random().nextInt(10)).join();
@@ -147,7 +131,13 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
     if (time == null) return;
 
     setDialogState(() {
-      selectedDateTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      selectedDateTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
     });
   }
 
@@ -157,31 +147,45 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
     final agenda = agendaController.text.trim();
     final description = descriptionController.text.trim();
 
-    if (title.isEmpty || agenda.isEmpty || description.isEmpty || selectedDateTime == null) {
-      return showSnack("All validation metrics fields required.", const Color(0xFFE74C3C), Icons.warning_amber_rounded);
+    if (title.isEmpty ||
+        agenda.isEmpty ||
+        description.isEmpty ||
+        selectedDateTime == null) {
+      return showSnack(
+        "All meeting details are required.",
+        AppColors.warning,
+        Icons.warning_amber_rounded,
+      );
     }
 
     setState(() => creatingMeeting = true);
     final approvalStatus = isAdmin() ? 'approved' : 'pending';
 
     try {
-      final response = await supabase.from('meetings').insert({
-        'title': title,
-        'agenda': agenda,
-        'description': description,
-        'created_by': widget.user['id'],
-        'approval_status': approvalStatus,
-        'attendance_enabled': false,
-        'attendance_code': generateCode(),
-        'scheduled_at': selectedDateTime!.toIso8601String(),
-        'is_completed': false,
-      }).select().single();
+      final response = await supabase
+          .from('meetings')
+          .insert({
+            'title': title,
+            'agenda': agenda,
+            'description': description,
+            'created_by': widget.user['id'],
+            'approval_status': approvalStatus,
+            'attendance_enabled': false,
+            'attendance_code': generateCode(),
+            'scheduled_at': selectedDateTime!.toIso8601String(),
+            'is_completed': false,
+          })
+          .select()
+          .single();
 
+      if (!mounted) return;
       final provider = Provider.of<AppProvider>(context, listen: false);
       final meetingId = response['id'];
       final targetCommitteeIds = isCommitteeHead()
           ? [widget.user['committee_id']]
-          : allCommittees ? provider.committees.map((c) => c['id']).toList() : selectedCommittees;
+          : allCommittees
+          ? provider.committees.map((c) => c['id']).toList()
+          : selectedCommittees;
 
       for (final committeeId in targetCommitteeIds) {
         await supabase.from('meeting_committees').insert({
@@ -197,7 +201,9 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
         if (allCommittees) {
           finalUserIds.addAll(provider.users.map((u) => u['id']));
         } else if (targetCommitteeIds.isNotEmpty) {
-          final targetedUsers = provider.users.where((u) => targetCommitteeIds.contains(u['committee_id']));
+          final targetedUsers = provider.users.where(
+            (u) => targetCommitteeIds.contains(u['committee_id']),
+          );
           finalUserIds.addAll(targetedUsers.map((u) => u['id']));
         }
       }
@@ -213,11 +219,15 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
       Navigator.of(context).pop();
       clearFormFields();
       await loadData();
-      showSnack("SESSION STRUCTURAL PROTOCOL LOGGED", kPrimaryTeal, Icons.done);
+      showSnack(
+        "SESSION CREATED SUCCESSFULLY",
+        AppColors.primaryCyan,
+        Icons.done,
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => creatingMeeting = false);
-      showSnack(e.toString(), const Color(0xFFE74C3C), Icons.error_outline);
+      showSnack(e.toString(), AppColors.error, Icons.error_outline);
     }
   }
 
@@ -234,249 +244,386 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
 
   Future<void> verifyAndMarkAttendance(Map<String, dynamic> meeting) async {
     final typedCode = verifyCodeController.text.trim();
-    if (typedCode.isEmpty) return showSnack("Enter telemetry code matrix.", const Color(0xFFF39C12), Icons.dialpad);
-    if (typedCode != meeting['attendance_code'].toString()) return showSnack("Code validation failed.", const Color(0xFFE74C3C), Icons.gpp_bad);
+    if (typedCode.isEmpty) {
+      return showSnack(
+        "Enter attendance code.",
+        AppColors.warning,
+        Icons.dialpad,
+      );
+    }
+    if (typedCode != meeting['attendance_code'].toString()) {
+      return showSnack("Invalid code.", AppColors.error, Icons.gpp_bad);
+    }
 
     setState(() => markingAttendance = true);
     try {
-      final existing = await supabase.from('attendance_records').select().eq('meeting_id', meeting['id']).eq('user_id', widget.user['id']);
+      final existing = await supabase
+          .from('attendance_records')
+          .select()
+          .eq('meeting_id', meeting['id'])
+          .eq('user_id', widget.user['id']);
       if (existing.isNotEmpty) {
         verifyCodeController.clear();
         setState(() => markingAttendance = false);
-        Navigator.pop(context);
-        return showSnack("Signature verification verified.", kAccentTeal, Icons.verified_user);
+        if (mounted) Navigator.pop(context);
+        return showSnack(
+          "Already marked attendance.",
+          AppColors.primaryCyan,
+          Icons.verified_user,
+        );
       }
 
-      await supabase.from('attendance_records').insert({'meeting_id': meeting['id'], 'user_id': widget.user['id']});
+      await supabase.from('attendance_records').insert({
+        'meeting_id': meeting['id'],
+        'user_id': widget.user['id'],
+      });
       verifyCodeController.clear();
       setState(() => markingAttendance = false);
-      Navigator.pop(context);
-      showSnack("ATTENDANCE SIGNATURE LOGGED", kPrimaryTeal, Icons.done);
+      if (mounted) Navigator.pop(context);
+      showSnack(
+        "ATTENDANCE MARKED SUCCESSFULLY",
+        AppColors.success,
+        Icons.done,
+      );
     } catch (e) {
       setState(() => markingAttendance = false);
-      showSnack(e.toString(), const Color(0xFFE74C3C), Icons.error_outline);
+      showSnack(e.toString(), AppColors.error, Icons.error_outline);
     }
   }
 
   Future<void> terminateSession(int id) async {
     try {
-      await supabase.from('meetings').update({'attendance_enabled': false, 'is_completed': true}).eq('id', id);
+      await supabase
+          .from('meetings')
+          .update({'attendance_enabled': false, 'is_completed': true})
+          .eq('id', id);
       await loadData();
-      showSnack("SESSION TERMINATED AND LOCKED", Colors.white54, Icons.lock_outline);
+      showSnack("SESSION ENDED", AppColors.textMuted, Icons.lock_outline);
     } catch (e) {
-      showSnack(e.toString(), const Color(0xFFE74C3C), Icons.error_outline);
+      showSnack(e.toString(), AppColors.error, Icons.error_outline);
     }
   }
 
   Future<void> approveMeeting(int id) async {
     try {
-      await supabase.from('meetings').update({'approval_status': 'approved'}).eq('id', id);
+      await supabase
+          .from('meetings')
+          .update({'approval_status': 'approved'})
+          .eq('id', id);
       await loadData();
-      showSnack("MEETING STATUS AUTHORIZED", kPrimaryTeal, Icons.verified_user_outlined);
+      showSnack(
+        "MEETING APPROVED",
+        AppColors.primaryCyan,
+        Icons.verified_user_outlined,
+      );
     } catch (e) {
-      showSnack(e.toString(), const Color(0xFFE74C3C), Icons.error_outline);
+      showSnack(e.toString(), AppColors.error, Icons.error_outline);
     }
   }
 
   Future<void> startAttendance(int id) async {
     try {
-      await supabase.from('meetings').update({'attendance_enabled': true, 'attendance_code': generateCode()}).eq('id', id);
+      await supabase
+          .from('meetings')
+          .update({
+            'attendance_enabled': true,
+            'attendance_code': generateCode(),
+          })
+          .eq('id', id);
       await loadData();
-      showSnack("LIVE TELEMETRY BROADCAST ONLINE", kPrimaryTeal, Icons.sensors);
+      showSnack("ATTENDANCE STARTED", AppColors.primaryCyan, Icons.sensors);
     } catch (e) {
-      showSnack(e.toString(), const Color(0xFFE74C3C), Icons.error_outline);
+      showSnack(e.toString(), AppColors.error, Icons.error_outline);
     }
   }
 
   Future<void> downloadAttendance(int meetingId) async {
     try {
-      final data = await supabase.from('attendance_records').select('users(name, usn, email)').eq('meeting_id', meetingId);
+      final data = await supabase
+          .from('attendance_records')
+          .select('users(name, usn, email)')
+          .eq('meeting_id', meetingId);
       String csv = "NAME,USN,EMAIL\n";
       for (var row in data) {
-        csv += "${row['users']['name']},${row['users']['usn']},${row['users']['email']}\n";
+        csv +=
+            "${row['users']['name']},${row['users']['usn']},${row['users']['email']}\n";
       }
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/attendance_$meetingId.csv');
       await file.writeAsString(csv);
-      await Share.shareXFiles([XFile(file.path)], text: 'Meeting Attendance Sync');
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'Meeting Attendance CSV');
     } catch (e) {
-      showSnack("Export failure.", const Color(0xFFE74C3C), Icons.warning);
+      showSnack("Export failed.", AppColors.error, Icons.warning);
     }
   }
 
-  void showDetailPanel(Map<String, dynamic> meeting, bool approved, bool isCreator) {
+  void showDetailPanel(
+    Map<String, dynamic> meeting,
+    bool approved,
+    bool isCreator,
+  ) {
     final bool isSessionOver = meeting['is_completed'] == true;
 
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setPanelState) {
-            return BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                padding: EdgeInsets.only(left: 24, right: 24, top: 24, bottom: MediaQuery.of(context).viewInsets.bottom + 32),
-                decoration: const BoxDecoration(
-                  color: kSurfaceCard,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  border: Border(top: BorderSide(color: Colors.white10)),
+      title: meeting['title'].toString().toUpperCase(),
+      builder: (ctx) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "STATUS",
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            meeting['title'].toString().toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isSessionOver ? Colors.white10 : (approved ? kPrimaryTeal.withOpacity(0.1) : Colors.orange.withOpacity(0.1)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            isSessionOver ? "COMPLETED" : (approved ? "APPROVED" : "PENDING"),
-                            style: TextStyle(color: isSessionOver ? Colors.white38 : (approved ? kAccentTeal : Colors.orange), fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSessionOver
+                        ? AppColors.surfaceElevated
+                        : (approved
+                              ? AppColors.success.withValues(alpha: 0.15)
+                              : AppColors.warning.withValues(alpha: 0.15)),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Text(
+                    isSessionOver
+                        ? "COMPLETED"
+                        : (approved ? "APPROVED" : "PENDING"),
+                    style: TextStyle(
+                      color: isSessionOver
+                          ? AppColors.textMuted
+                          : (approved ? AppColors.success : AppColors.warning),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 20),
-                    const Align(alignment: Alignment.centerLeft, child: Text("AGENDA CONTEXT", style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.bold))),
-                    const SizedBox(height: 4),
-                    Align(alignment: Alignment.centerLeft, child: Text(meeting['agenda'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 14))),
-                    
-                    if (!isSessionOver) ...[
-                      const SizedBox(height: 16),
-                      const Align(alignment: Alignment.centerLeft, child: Text("OPERATIONAL ANALYSIS METRICS DESCRIPTION", style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.bold))),
-                      const SizedBox(height: 4),
-                      Align(alignment: Alignment.centerLeft, child: Text(meeting['description'] ?? 'N/A', style: const TextStyle(color: Colors.white60, fontSize: 13, height: 1.4))),
-                    ],
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time_rounded, color: Colors.white38, size: 16),
-                        const SizedBox(width: 8),
-                        Text(meeting['scheduled_at']?.toString().substring(0, 16) ?? '', style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    if (!isSessionOver) ...[
-                      if (!approved && isAdmin()) ...[
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: kPrimaryTeal, minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                          onPressed: () { Navigator.pop(context); approveMeeting(meeting['id']); },
-                          child: const Text("EXECUTE MANAGEMENT APPROVAL", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                        ),
-                      ],
-                      if (approved && (isCreator || isAdmin())) ...[
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(foregroundColor: Colors.white70, side: const BorderSide(color: Colors.white10), minimumSize: const Size(0, 46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                onPressed: () => downloadAttendance(meeting['id']),
-                                child: const Text("Export CSV", style: TextStyle(fontSize: 13)),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (meeting['attendance_enabled'] == false)
-                              Expanded(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, minimumSize: const Size(0, 46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                  onPressed: () { Navigator.pop(context); startAttendance(meeting['id']); },
-                                  child: const Text("Start Roster", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                ),
-                              )
-                            else
-                              Expanded(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFC0392B), foregroundColor: Colors.white, minimumSize: const Size(0, 46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                  onPressed: () { Navigator.pop(context); terminateSession(meeting['id']); },
-                                  child: const Text("End Session", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(12)),
-                          child: Text(
-                            meeting['attendance_enabled'] == true ? meeting['attendance_code']?.toString() ?? '------' : 'BROADCAST LINK OFFLINE',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: meeting['attendance_enabled'] == true ? kAccentTeal : Colors.white24, fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 4),
-                          ),
-                        ),
-                      ],
-                      if (approved && !isCreator && meeting['attendance_enabled'] == true) ...[
-                        const Divider(color: Colors.white10, height: 24),
-                        TextField(
-                          controller: verifyCodeController,
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                          decoration: InputDecoration(filled: true, fillColor: Colors.black54, hintText: "Enter Sync Token", hintStyle: const TextStyle(color: Colors.white24)),
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: kAccentTeal, foregroundColor: Colors.black, minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                          onPressed: markingAttendance ? null : () => verifyAndMarkAttendance(meeting),
-                          child: const Text("VERIFY SIGNATURE ACCESS", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        ),
-                      ],
-                    ],
-                  ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const Text(
+              "AGENDA",
+              style: TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              meeting['agenda'] ?? '',
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 14,
+              ),
+            ),
+            if (!isSessionOver) ...[
+              const SizedBox(height: AppSpacing.lg),
+              const Text(
+                "DESCRIPTION",
+                style: TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            );
-          },
+              const SizedBox(height: 4),
+              Text(
+                meeting['description'] ?? 'N/A',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                const Icon(
+                  Icons.access_time_rounded,
+                  color: AppColors.textMuted,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  meeting['scheduled_at']
+                          ?.toString()
+                          .substring(0, 16)
+                          .replaceAll('T', ' • ') ??
+                      '',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            if (!isSessionOver) ...[
+              if (!approved && isAdmin()) ...[
+                AppButton(
+                  text: "APPROVE MEETING",
+                  width: double.infinity,
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    approveMeeting(meeting['id']);
+                  },
+                ),
+              ],
+              if (approved && (isCreator || isAdmin())) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        text: "Export CSV",
+                        variant: AppButtonVariant.outlined,
+                        onPressed: () => downloadAttendance(meeting['id']),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    if (meeting['attendance_enabled'] == false)
+                      Expanded(
+                        child: AppButton(
+                          text: "Start Attendance",
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            startAttendance(meeting['id']);
+                          },
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: AppButton(
+                          text: "End Session",
+                          variant: AppButtonVariant.secondary,
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            terminateSession(meeting['id']);
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Text(
+                    meeting['attendance_enabled'] == true
+                        ? meeting['attendance_code']?.toString() ?? '------'
+                        : 'ATTENDANCE CLOSED',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: meeting['attendance_enabled'] == true
+                          ? AppColors.primaryCyan
+                          : AppColors.textMuted,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 4,
+                    ),
+                  ),
+                ),
+              ],
+              if (approved &&
+                  !isCreator &&
+                  meeting['attendance_enabled'] == true) ...[
+                const Divider(color: AppColors.borderSubtle, height: 24),
+                TextField(
+                  controller: verifyCodeController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: "Enter Attendance Code",
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  text: "MARK ATTENDANCE",
+                  width: double.infinity,
+                  isLoading: markingAttendance,
+                  onPressed: markingAttendance
+                      ? null
+                      : () => verifyAndMarkAttendance(meeting),
+                ),
+              ],
+            ],
+          ],
         );
       },
     );
   }
 
   void showCreateDialog() {
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
+      title: "CREATE NEW MEETING",
+      builder: (ctx) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setDialogState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              decoration: const BoxDecoration(color: kBackgroundBg, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+            return SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 14),
-                  Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(10))),
-                  const SizedBox(height: 14),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.all(24),
-                      children: [
-                        TextField(controller: titleController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: "Meeting Title")),
-                        const SizedBox(height: 14),
-                        TextField(controller: agendaController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: "Agenda")),
-                        const SizedBox(height: 14),
-                        TextField(controller: descriptionController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: "Detailed Description")),
-                        const SizedBox(height: 20),
-                        ElevatedButton(onPressed: () => pickDateTime(setDialogState), child: Text(selectedDateTime == null ? "Pick Date & Time" : selectedDateTime.toString())),
-                        const SizedBox(height: 24),
-                        ElevatedButton(onPressed: createMeeting, child: const Text("SAVE STRUCTURAL MEETING")),
-                      ],
+                  TextField(
+                    controller: titleController,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    decoration: const InputDecoration(
+                      labelText: "Meeting Title",
                     ),
-                  )
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: agendaController,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    decoration: const InputDecoration(labelText: "Agenda"),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: descriptionController,
+                    maxLines: 3,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    decoration: const InputDecoration(labelText: "Description"),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  AppButton(
+                    text: selectedDateTime == null
+                        ? "Pick Date & Time"
+                        : selectedDateTime.toString().substring(0, 16),
+                    variant: AppButtonVariant.outlined,
+                    icon: Icons.calendar_month_rounded,
+                    width: double.infinity,
+                    onPressed: () => pickDateTime(setDialogState),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  AppButton(
+                    text: "CREATE MEETING",
+                    width: double.infinity,
+                    isLoading: creatingMeeting,
+                    onPressed: creatingMeeting ? null : createMeeting,
+                  ),
                 ],
               ),
             );
@@ -488,51 +635,55 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          backgroundColor: Colors.black,
-          selectedItemColor: const Color(0xFF16A085),
-          unselectedItemColor: Colors.grey.shade600,
-        ),
-      ),
-      child: Scaffold(
-        backgroundColor: kBackgroundBg,
-        appBar: AppBar(
-          backgroundColor: kBackgroundBg,
-          elevation: 0,
-          title: const Text("MEETINGS & SESSIONS", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-          bottom: TabBar(
-            controller: _tabController,
-            dividerColor: Colors.transparent,
-            indicatorColor: kPrimaryTeal,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white30,
-            tabs: const [
-              Tab(text: "Live Now"),
-              Tab(text: "Scheduled"),
-              Tab(text: "Ended"),
-            ],
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        title: const Text(
+          "MEETINGS & SESSIONS",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            letterSpacing: 1.2,
           ),
         ),
-        floatingActionButton: canCreateMeeting()
-            ? FloatingActionButton(backgroundColor: kPrimaryTeal, foregroundColor: Colors.white, onPressed: showCreateDialog, child: const Icon(Icons.add))
-            : null,
-        body: Consumer<AppProvider>(
-          builder: (context, provider, child) {
-            if (provider.isLoadingMeetings && provider.meetings.isEmpty) {
-              return _buildMeetingsSkeleton();
-            }
-            return TabBarView(
-              controller: _tabController,
-              children: [
-                buildMeetingList(ScopeType.live, provider.meetings),
-                buildMeetingList(ScopeType.scheduled, provider.meetings),
-                buildMeetingList(ScopeType.ended, provider.meetings),
-              ],
-            );
-          },
+        bottom: TabBar(
+          controller: _tabController,
+          dividerColor: AppColors.borderSubtle,
+          indicatorColor: AppColors.primaryCyan,
+          labelColor: AppColors.primaryCyan,
+          unselectedLabelColor: AppColors.textMuted,
+          indicatorWeight: 3,
+          tabs: const [
+            Tab(text: "Live Now"),
+            Tab(text: "Scheduled"),
+            Tab(text: "Ended"),
+          ],
         ),
+      ),
+      floatingActionButton: canCreateMeeting()
+          ? FloatingActionButton(
+              backgroundColor: AppColors.primaryCyan,
+              foregroundColor: Colors.black,
+              onPressed: showCreateDialog,
+              child: const Icon(Icons.add_rounded),
+            )
+          : null,
+      body: Consumer<AppProvider>(
+        builder: (context, provider, child) {
+          if (provider.isLoadingMeetings && provider.meetings.isEmpty) {
+            return _buildMeetingsSkeleton();
+          }
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              buildMeetingList(ScopeType.live, provider.meetings),
+              buildMeetingList(ScopeType.scheduled, provider.meetings),
+              buildMeetingList(ScopeType.ended, provider.meetings),
+            ],
+          );
+        },
       ),
     );
   }
@@ -540,7 +691,8 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
   Widget buildMeetingList(ScopeType type, List<Map<String, dynamic>> meetings) {
     final filtered = meetings.where((m) {
       final isApproved = m['approval_status'] == 'approved';
-      final isLive = m['attendance_enabled'] == true && m['is_completed'] != true;
+      final isLive =
+          m['attendance_enabled'] == true && m['is_completed'] != true;
       final isCompleted = m['is_completed'] == true;
 
       if (type == ScopeType.live) return isLive && isApproved;
@@ -549,64 +701,104 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
     }).toList();
 
     if (filtered.isEmpty) {
-      return const Center(child: Text("NO MEETINGS LINED UP", style: TextStyle(color: Colors.white24, fontSize: 13)));
+      return const AppEmptyState(
+        status: AppStateStatus.empty,
+        title: "No Meetings Found",
+        description: "There are currently no meetings scheduled in this tab.",
+      );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        96,
+      ),
       itemCount: filtered.length,
       itemBuilder: (context, index) {
         final m = filtered[index];
         final approved = m['approval_status'] == 'approved';
-        final isCreator = m['created_by'].toString() == widget.user['id'].toString();
+        final isCreator =
+            m['created_by'].toString() == widget.user['id'].toString();
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: kSurfaceCard,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: type == ScopeType.live ? kPrimaryTeal.withOpacity(0.4) : Colors.white.withOpacity(0.02)),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
+          margin: const EdgeInsets.only(bottom: AppSpacing.md),
+          child: AppCard(
             onTap: () => showDetailPanel(m, approved, isCreator),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
+            border: Border.all(
+              color: type == ScopeType.live
+                  ? AppColors.primaryCyan.withValues(alpha: 0.4)
+                  : AppColors.borderSubtle,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
                         m['title'].toString().toUpperCase(),
-                        style: TextStyle(color: type == ScopeType.ended ? Colors.white60 : Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: type == ScopeType.ended
+                              ? AppColors.textMuted
+                              : AppColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      if (type == ScopeType.live)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(color: const Color(0xFFE74C3C).withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-                          child: const Text("LIVE", style: TextStyle(color: Color(0xFFE74C3C), fontSize: 8, fontWeight: FontWeight.bold)),
-                        )
+                    ),
+                    if (type == ScopeType.live)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        child: const Text(
+                          "LIVE",
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  m['agenda'] ?? '',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+                if (type != ScopeType.ended) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_rounded,
+                        size: 13,
+                        color: AppColors.textMuted,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        m['scheduled_at']?.toString().substring(0, 10) ?? '',
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    m['agenda'] ?? '',
-                    style: TextStyle(color: Colors.white.withOpacity(0.35), fontSize: 12),
-                  ),
-                  if (type != ScopeType.ended) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today_rounded, size: 12, color: Colors.white24),
-                        const SizedBox(width: 6),
-                        Text(m['scheduled_at']?.toString().substring(0, 10) ?? '', style: const TextStyle(color: Colors.white24, fontSize: 11)),
-                      ],
-                    )
-                  ]
                 ],
-              ),
+              ],
             ),
           ),
         );
@@ -616,40 +808,28 @@ class _MeetingsPageState extends State<MeetingsPage> with SingleTickerProviderSt
 
   Widget _buildMeetingsSkeleton() {
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: 4,
       itemBuilder: (context, index) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: kSurfaceCard,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.02)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const SkeletonBox(width: 140, height: 20),
-                  const SkeletonBox(width: 60, height: 20, borderRadius: 6),
-                ],
-              ),
-              const SizedBox(height: 14),
-              const SkeletonBox(width: double.infinity, height: 14),
-              const SizedBox(height: 8),
-              const SkeletonBox(width: 200, height: 14),
-              const SizedBox(height: 18),
-              const Row(
-                children: [
-                  SkeletonBox(width: 80, height: 12),
-                  SizedBox(width: 16),
-                  SkeletonBox(width: 120, height: 12),
-                ],
-              )
-            ],
+        return const Padding(
+          padding: EdgeInsets.only(bottom: AppSpacing.md),
+          child: AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    SkeletonBox(width: 140, height: 20),
+                    SkeletonBox(width: 60, height: 20, borderRadius: 6),
+                  ],
+                ),
+                SizedBox(height: 14),
+                SkeletonBox(width: double.infinity, height: 14),
+                SizedBox(height: 8),
+                SkeletonBox(width: 200, height: 14),
+              ],
+            ),
           ),
         );
       },

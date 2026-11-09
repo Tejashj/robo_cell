@@ -1,10 +1,14 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:local_auth/local_auth.dart';
+import '../../services/auth_helper.dart';
+import '../../services/biometric_service.dart';
+import '../../theme/design_system.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_card.dart';
+import '../../widgets/app_snackbar.dart';
 import '../../navigation.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,6 +20,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final supabase = Supabase.instance.client;
+  final BiometricService _biometricService = BiometricService();
   bool loading = true;
   bool loggingIn = false;
   List<Map<String, dynamic>> committees = [];
@@ -42,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> loadCommittees() async {
     try {
       final data = await supabase
-          .from('committees')
+          .from('login_committees')
           .select()
           .order('display_order', ascending: true);
       committees = List<Map<String, dynamic>>.from(data);
@@ -62,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       final data = await supabase
-          .from('users')
+          .from('login_members_directory')
           .select()
           .eq('committee_id', committeeId)
           .order('id', ascending: true);
@@ -76,115 +81,181 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> login() async {
     if (selectedMember == null) {
-      showSnack("SELECT MEMBER", Colors.redAccent);
+      showSnack("SELECT MEMBER", AppColors.error);
       return;
     }
-    if (passwordController.text.trim().isEmpty) {
-      showSnack("ENTER PASSWORD", Colors.orange);
+    final rawPassword = passwordController.text;
+    final submittedPassword = rawPassword.trim();
+    if (submittedPassword.isEmpty) {
+      showSnack("ENTER PASSWORD", AppColors.warning);
       return;
     }
 
     HapticFeedback.mediumImpact();
     setState(() => loggingIn = true);
 
+    final selectedId = selectedMember!['id'];
+    final selectedUsn = selectedMember!['usn']?.toString();
+    final syntheticEmail = AuthHelper.deriveSyntheticEmail(
+      selectedId,
+      selectedUsn,
+    );
+
+    User? authUser;
     try {
-      final result = await supabase
-          .from('users')
-          .select('''
-            *,
-            committees(id, name)
-          ''')
-          .eq('id', selectedMember!['id'])
-          .eq('password', passwordController.text.trim())
-          .single();
-
-      final box = Hive.box('robo_cache');
-      box.put('logged_in_user', result);
-      box.put('biometric_enabled', true);
-
-      // -----------------------------------------------------------------
-      // NEW: Show biometric prompt immediately after successful login
-      // -----------------------------------------------------------------
-      // Wait a moment to ensure the activity is ready
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      final localAuth = LocalAuthentication();
-      bool canCheck = false;
-      try {
-        canCheck = await localAuth.canCheckBiometrics;
-      } catch (e) {
-        debugPrint('canCheckBiometrics error: $e');
-      }
-
-      if (canCheck) {
-        try {
-          // Use biometricOnly = false to allow PIN/pattern fallback
-          await localAuth.authenticate(
-            localizedReason: 'Enable fingerprint for future logins',
-            biometricOnly: false,
-          );
-        } catch (e) {
-          debugPrint('Biometric authentication after login error: $e');
-          // Still proceed to main screen even if biometric fails
-        }
-      }
-      // -----------------------------------------------------------------
-
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 900),
-          pageBuilder: (context, animation, secondaryAnimation) {
-            return FadeTransition(
-              opacity: animation,
-              child: MainNavigation(user: result),
-            );
-          },
-        ),
+      final authResponse = await supabase.auth.signInWithPassword(
+        email: syntheticEmail,
+        password: submittedPassword,
       );
+      authUser = authResponse.user ?? supabase.auth.currentUser;
+    } on AuthException catch (_) {
+      if (!mounted) return;
+      showSnack("INVALID PASSWORD", AppColors.error);
+      if (mounted) setState(() => loggingIn = false);
+      return;
     } catch (e) {
-      showSnack("INVALID PASSWORD", Colors.redAccent);
+      if (!mounted) return;
+      showSnack("AUTH ERROR: $e", AppColors.error);
+      if (mounted) setState(() => loggingIn = false);
+      return;
+    }
+
+    if (authUser == null) {
+      if (!mounted) return;
+      showSnack("AUTH ERROR: Session creation failed", AppColors.error);
+      if (mounted) setState(() => loggingIn = false);
+      return;
+    }
+
+    // STAGE 2: POST-AUTH PROFILE QUERY
+    Map<String, dynamic>? userProfile;
+    try {
+      final profileData = await supabase.rpc('get_current_user_profile');
+
+      if (profileData == null) {
+        throw Exception("Profile resolution returned null");
+      }
+
+      userProfile = Map<String, dynamic>.from(profileData as Map);
+
+      if (userProfile['id'].toString() != selectedId.toString()) {
+        await supabase.auth.signOut();
+        if (!mounted) return;
+        showSnack("PROFILE MISMATCH ERROR", AppColors.error);
+        if (mounted) setState(() => loggingIn = false);
+        return;
+      }
+    } catch (e) {
+      if (!mounted) return;
+      showSnack("PROFILE RESOLUTION ERROR: $e", AppColors.error);
+      if (mounted) setState(() => loggingIn = false);
+      return;
+    }
+
+    // STAGE 3: CACHE & BIOMETRICS
+    try {
+      final box = Hive.box('robo_cache');
+      box.put('logged_in_user', userProfile);
+      await _biometricService.setBiometricEnabled(true);
+    } catch (_) {}
+
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    final bool isSupported = await _biometricService.isBiometricsSupported();
+    if (isSupported) {
+      try {
+        await _biometricService.authenticate(
+          localizedReason: 'Enable fingerprint for quick login',
+        );
+      } catch (e) {
+        debugPrint('Biometric authentication after login error: $e');
+      }
     }
 
     if (!mounted) return;
-    setState(() => loggingIn = false);
+
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 700),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FadeTransition(
+            opacity: animation,
+            child: MainNavigation(user: userProfile!),
+          );
+        },
+      ),
+    );
+    if (mounted) setState(() => loggingIn = false);
+  }
+
+  Future<void> _quickBiometricLogin() async {
+    final session = supabase.auth.currentSession;
+    final box = Hive.box('robo_cache');
+    final cachedUser = box.get('logged_in_user');
+    if (session == null || cachedUser == null) {
+      showSnack("Session expired. Please log in first.", AppColors.warning);
+      return;
+    }
+
+    final bool authenticated = await _biometricService.authenticate(
+      localizedReason: 'Scan fingerprint to unlock Robo Cell',
+    );
+
+    if (authenticated && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              MainNavigation(user: Map<String, dynamic>.from(cachedUser)),
+        ),
+      );
+    }
+  }
+
+  void loginAsGuest() {
+    HapticFeedback.lightImpact();
+    final guestUser = {
+      'id': 'guest_user',
+      'name': 'Guest Visitor',
+      'usn': 'GUEST',
+      'email': 'guest@robocell.org',
+      'role': 'GUEST',
+      'committee_id': null,
+      'committees': {'name': 'Public Visitor'},
+    };
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => MainNavigation(user: guestUser)),
+    );
   }
 
   void showSnack(String text, Color color) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          backgroundColor: color,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          content: Text(
-            text,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-        ),
-      );
+    AppSnackBar.show(
+      context,
+      message: text,
+      type: color == AppColors.error
+          ? SnackBarType.error
+          : (color == AppColors.warning
+                ? SnackBarType.warning
+                : SnackBarType.info),
+    );
   }
 
   Widget buildCommitteeDropdown() {
     return DropdownButtonFormField<Map<String, dynamic>>(
       isExpanded: true,
-      value: selectedCommittee,
-      dropdownColor: const Color(0xFF111111),
-      style: const TextStyle(color: Colors.white),
-      iconEnabledColor: const Color(0xFF16A085),
-      decoration: InputDecoration(
+      initialValue: selectedCommittee,
+      dropdownColor: AppColors.surfaceElevated,
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.w600,
+      ),
+      iconEnabledColor: AppColors.primaryEmerald,
+      decoration: const InputDecoration(
+        labelText: "COMMITTEE",
         hintText: "SELECT COMMITTEE",
-        hintStyle: const TextStyle(color: Colors.grey),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.03),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide.none,
-        ),
       ),
       items: committees.map((c) {
         return DropdownMenuItem(
@@ -202,21 +273,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget buildMemberDropdown() {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 350),
+      duration: AppDurations.normal,
       child: loading && selectedCommittee != null
           ? Container(
               key: const ValueKey("loading"),
-              height: 56,
+              height: 54,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.03),
-                borderRadius: BorderRadius.circular(20),
+                color: AppColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(AppRadius.input),
+                border: Border.all(color: AppColors.borderSubtle),
               ),
               child: const Center(
                 child: SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
-                    color: Color(0xFF16A085),
+                    color: AppColors.primaryEmerald,
                     strokeWidth: 2,
                   ),
                 ),
@@ -225,19 +297,16 @@ class _LoginScreenState extends State<LoginScreen> {
           : DropdownButtonFormField<Map<String, dynamic>>(
               key: const ValueKey("loaded"),
               isExpanded: true,
-              value: selectedMember,
-              dropdownColor: const Color(0xFF111111),
-              style: const TextStyle(color: Colors.white),
-              iconEnabledColor: const Color(0xFF16A085),
-              decoration: InputDecoration(
+              initialValue: selectedMember,
+              dropdownColor: AppColors.surfaceElevated,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+              iconEnabledColor: AppColors.primaryEmerald,
+              decoration: const InputDecoration(
+                labelText: "MEMBER",
                 hintText: "SELECT MEMBER",
-                hintStyle: const TextStyle(color: Colors.grey),
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.03),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
               ),
               items: members.map((m) {
                 final imageUrl = getImageUrl(m);
@@ -247,22 +316,32 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       ClipOval(
                         child: Container(
-                          width: 36,
-                          height: 36,
-                          color: const Color(0xFF16A085),
+                          width: 32,
+                          height: 32,
+                          color: AppColors.primaryEmerald,
                           child: imageUrl.isNotEmpty
-                              ? FadeInImage(
-                                  placeholder: const AssetImage('assets/rcell.jpg'),
-                                  image: CachedNetworkImageProvider(imageUrl),
+                              ? CachedNetworkImage(
+                                  imageUrl: imageUrl,
                                   fit: BoxFit.cover,
-                                  fadeInDuration: const Duration(milliseconds: 400),
-                                  imageErrorBuilder: (context, error, stackTrace) =>
-                                      const Icon(Icons.person, color: Colors.black, size: 20),
+                                  placeholder: (context, url) => Image.asset(
+                                    'assets/rcell.jpg',
+                                    fit: BoxFit.cover,
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(
+                                        Icons.person_rounded,
+                                        color: Colors.black,
+                                        size: 18,
+                                      ),
                                 )
-                              : const Icon(Icons.person, color: Colors.black, size: 20),
+                              : const Icon(
+                                  Icons.person_rounded,
+                                  color: Colors.black,
+                                  size: 18,
+                                ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Text(
                           m['name'].toString().toUpperCase(),
@@ -282,79 +361,48 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget buildHeroProfile() {
-    const neon = Color(0xFF16A085);
     final imageUrl = selectedMember != null ? getImageUrl(selectedMember!) : '';
     return Hero(
       tag: "rcell_logo",
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 550),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInOutCubic,
-        transitionBuilder: (child, animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.92, end: 1).animate(animation),
-              child: child,
-            ),
-          );
-        },
+        duration: AppDurations.normal,
         child: selectedMember == null
             ? Container(
                 key: const ValueKey("logo"),
-                padding: const EdgeInsets.all(5),
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: neon, width: 3),
-                  boxShadow: [BoxShadow(color: neon.withOpacity(0.25), blurRadius: 30)],
+                  border: Border.all(color: AppColors.primaryEmerald, width: 2),
                 ),
                 child: const CircleAvatar(
-                  radius: 72,
-                  backgroundColor: Colors.black,
+                  radius: 56,
+                  backgroundColor: AppColors.surface,
                   backgroundImage: AssetImage('assets/rcell.jpg'),
                 ),
               )
             : Container(
                 key: ValueKey(selectedMember!['id']),
-                padding: const EdgeInsets.all(5),
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: neon, width: 3),
-                  boxShadow: [BoxShadow(color: neon.withOpacity(0.25), blurRadius: 30)],
+                  border: Border.all(color: AppColors.primaryEmerald, width: 2),
                 ),
                 child: CircleAvatar(
-                  radius: 76,
-                  backgroundColor: Colors.black,
+                  radius: 60,
+                  backgroundColor: AppColors.surface,
                   child: ClipOval(
-                    child: FadeInImage(
-                      placeholder: const AssetImage('assets/rcell.jpg'),
-                      image: CachedNetworkImageProvider(imageUrl),
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
                       width: double.infinity,
                       height: double.infinity,
                       fit: BoxFit.cover,
-                      fadeInDuration: const Duration(milliseconds: 500),
-                      imageErrorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.black,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.broken_image_rounded, color: Colors.white54, size: 42),
-                              const SizedBox(height: 8),
-                              const Text(
-                                "IMAGE\nNOT FOUND",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                      placeholder: (context, url) =>
+                          Image.asset('assets/rcell.jpg', fit: BoxFit.cover),
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.person_rounded,
+                        color: AppColors.primaryEmerald,
+                        size: 36,
+                      ),
                     ),
                   ),
                 ),
@@ -365,163 +413,151 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const neon = Color(0xFF16A085);
     return Scaffold(
-      backgroundColor: const Color(0xFF030303),
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            Positioned(
-              top: -150,
-              right: -100,
-              child: Container(
-                width: 350,
-                height: 350,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(colors: [neon.withOpacity(0.18), Colors.transparent]),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: loading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryEmerald,
                 ),
-              ),
-            ),
-            Positioned(
-              bottom: -180,
-              left: -120,
-              child: Container(
-                width: 420,
-                height: 420,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(colors: [Colors.blueGrey.withOpacity(0.18), Colors.transparent]),
+              )
+            : SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xl,
+                  vertical: AppSpacing.lg,
                 ),
-              ),
-            ),
-            SafeArea(
-              child: loading
-                  ? const Center(child: CircularProgressIndicator(color: neon))
-                  : SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: AppSpacing.lg),
+                    buildHeroProfile(),
+                    const SizedBox(height: AppSpacing.lg),
+                    const Text(
+                      "WELCOME BACK",
+                      style: TextStyle(
+                        color: AppColors.headingGold,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2.0,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "ROBO CELL PORTAL",
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    AppCard(
+                      isGlass: true,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 20),
-                          buildHeroProfile(),
-                          const SizedBox(height: 28),
                           const Text(
-                            "ROBO CELL",
+                            "SIGN IN",
                             style: TextStyle(
-                              color: Color(0xFFE2E8F0),
-                              fontSize: 34,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 8,
+                              color: AppColors.headingGold,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              letterSpacing: 1.2,
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 400),
-                            child: selectedMember == null
-                                ? const Text(
-                                    "LOGIN PORTAL",
-                                    key: ValueKey("default"),
-                                    style: TextStyle(color: Colors.grey, fontSize: 13, letterSpacing: 1.5),
-                                  )
-                                : Text(
-                                    selectedMember!['role'].toString().replaceAll("_", " ").toUpperCase(),
-                                    key: const ValueKey("role"),
-                                    style: const TextStyle(
-                                      color: neon,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 2,
-                                    ),
-                                  ),
-                          ),
-                          const SizedBox(height: 42),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(32),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.04),
-                                  borderRadius: BorderRadius.circular(32),
-                                  border: Border.all(color: Colors.white.withOpacity(0.08)),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      "LOGIN HERE",
-                                      style: TextStyle(
-                                        color: Color(0xFFD8CFB4),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 17,
-                                        letterSpacing: 1.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    buildCommitteeDropdown(),
-                                    if (members.isNotEmpty) ...[
-                                      const SizedBox(height: 20),
-                                      buildMemberDropdown(),
-                                    ],
-                                    if (selectedMember != null) ...[
-                                      const SizedBox(height: 24),
-                                      TextField(
-                                        controller: passwordController,
-                                        obscureText: true,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration: InputDecoration(
-                                          hintText: "ENTER PASSWORD",
-                                          hintStyle: const TextStyle(color: Colors.grey),
-                                          prefixIcon: const Icon(Icons.lock, color: neon),
-                                          filled: true,
-                                          fillColor: Colors.white.withOpacity(0.03),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(20),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 28),
-                                      SizedBox(
-                                        width: double.infinity,
-                                        height: 58,
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: neon,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(20),
-                                            ),
-                                          ),
-                                          onPressed: loggingIn ? null : login,
-                                          child: loggingIn
-                                              ? const CircularProgressIndicator(color: Colors.black)
-                                              : const Text(
-                                                  "LOGIN",
-                                                  style: TextStyle(
-                                                    color: Colors.black,
-                                                    fontWeight: FontWeight.bold,
-                                                    letterSpacing: 2,
-                                                    fontSize: 15,
-                                                  ),
-                                                ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
+                          const SizedBox(height: AppSpacing.lg),
+                          buildCommitteeDropdown(),
+                          if (members.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            buildMemberDropdown(),
+                          ],
+                          if (selectedMember != null) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            TextField(
+                              controller: passwordController,
+                              obscureText: true,
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: "PASSWORD",
+                                hintText: "ENTER PASSWORD",
+                                prefixIcon: Icon(
+                                  Icons.lock_rounded,
+                                  color: AppColors.primaryEmerald,
+                                  size: 18,
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 40),
+                            const SizedBox(height: AppSpacing.xl),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: AppButton(
+                                    text: "SIGN IN",
+                                    isLoading: loggingIn,
+                                    onPressed: loggingIn ? null : login,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.md),
+                                Container(
+                                  height: AppSpacing.buttonHeight,
+                                  width: AppSpacing.buttonHeight,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceElevated,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.button,
+                                    ),
+                                    border: Border.all(
+                                      color: AppColors.borderSubtle,
+                                    ),
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.fingerprint_rounded,
+                                      color: AppColors.primaryEmerald,
+                                      size: 24,
+                                    ),
+                                    onPressed: _quickBiometricLogin,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Center(
+                              child: TextButton(
+                                onPressed: () {
+                                  showSnack(
+                                    "Please contact your Committee Head or President to reset password.",
+                                    AppColors.warning,
+                                  );
+                                },
+                                child: const Text(
+                                  "Forgot Password?",
+                                  style: TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
-            ),
-          ],
-        ),
+                    const SizedBox(height: AppSpacing.lg),
+                    AppButton(
+                      text: "CONTINUE AS GUEST",
+                      variant: AppButtonVariant.outlined,
+                      icon: Icons.person_outline_rounded,
+                      width: double.infinity,
+                      onPressed: loginAsGuest,
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                  ],
+                ),
+              ),
       ),
     );
   }

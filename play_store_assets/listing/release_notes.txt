@@ -1,0 +1,9 @@
+Initial official release of the Robo Cell mobile application.
+
+What's New:
+• Unified Home Feed for department announcements and meeting updates
+• Complete Committee Hierarchy & Member Directory
+• Event Media Gallery featuring workshop and competition highlights
+• Guest Access Mode for prospective members and public browsing
+• Secure Member Sign-in with native Biometric Authentication support
+• High-performance dark UI theme with responsive layout optimizations

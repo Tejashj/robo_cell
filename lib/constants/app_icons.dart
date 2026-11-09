@@ -10,7 +10,10 @@ class AppIcons {
   static void precacheSVGs() {
     for (String path in allSvgs) {
       final loader = SvgAssetLoader(path);
-      svg.cache.putIfAbsent(loader.cacheKey(null), () => loader.loadBytes(null));
+      svg.cache.putIfAbsent(
+        loader.cacheKey(null),
+        () => loader.loadBytes(null),
+      );
     }
   }
 }
